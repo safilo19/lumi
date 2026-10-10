@@ -63,6 +63,15 @@ jobs:
           # (readline ERR_USE_AFTER_CLOSE). Write the config file directly with
           # both paths pre-filled; Config.loadConfig reads these exact field
           # names, so loadOrCreateConfig finds them set and never prompts.
+          #
+          # Bubblewrap also expects a flat SDK layout: it validates the SDK by
+          # checking for $SDK/tools or $SDK/bin, and runs sdkmanager from
+          # $SDK/bin/sdkmanager. The runner's SDK keeps cmdline-tools under
+          # cmdline-tools/<ver>/bin, so expose that bin dir as $ANDROID_HOME/bin.
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)"
+          if [ -z "$SDKMGR" ]; then echo "::error::sdkmanager not found under $ANDROID_HOME/cmdline-tools"; exit 1; fi
+          ln -sfn "$(dirname "$SDKMGR")" "$ANDROID_HOME/bin"
+          ls -l "$ANDROID_HOME/bin/sdkmanager"
           mkdir -p "$HOME/.bubblewrap"
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
           cat "$HOME/.bubblewrap/config.json"
