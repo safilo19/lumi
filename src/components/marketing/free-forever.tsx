@@ -16,7 +16,7 @@ export function FreeForever() {
       <Container>
         <Reveal>
           <div className="relative overflow-hidden rounded-[var(--radius-card)] border-2 border-line bg-surface px-6 py-12 shadow-[var(--shadow-card)] sm:px-12 lg:py-16">
-            <span className="nw-blob -right-16 -top-16 h-64 w-64 bg-lime/30" aria-hidden />
+            <span className="lumi-blob -right-16 -top-16 h-64 w-64 bg-lime/30" aria-hidden />
             <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_2px_1fr] lg:gap-14">
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-accent-weak px-4 py-2 text-xs font-semibold text-accent-weak-ink">
@@ -27,7 +27,7 @@ export function FreeForever() {
                   No trial. No card. No catch.
                 </h2>
                 <p className="mt-4 max-w-md leading-relaxed text-ink-soft">
-                  NoteWeaver is built for CUST students and runs free, so a
+                  Lumi is built for CUST students and runs free, so a
                   tight week or an empty account never stands between you and
                   your notes. Teachers are welcome too.
                 </p>

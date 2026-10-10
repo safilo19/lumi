@@ -33,7 +33,7 @@ export function AppSidebar({ user }: { user?: SidebarUser | null }) {
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r-2 border-line bg-surface/50 lg:flex">
       <div className="flex h-[64px] items-center px-6">
-        <Link href="/" aria-label="NoteWeaver home">
+        <Link href="/" aria-label="Lumi home">
           <Logo />
         </Link>
       </div>

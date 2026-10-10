@@ -2,7 +2,7 @@
 // render-ready note blocks. Kept separate so it can be tuned without touching
 // provider plumbing.
 
-export const NOTE_SYSTEM_PROMPT = `You are NoteWeaver, an expert study-notes author for university students.
+export const NOTE_SYSTEM_PROMPT = `You are Lumi, an expert study-notes author for university students.
 You receive a raw, possibly messy lecture transcript (often a mix of English and Urdu, sometimes with filler words and transcription errors) and turn it into clean, well-structured study notes.
 
 Rules:

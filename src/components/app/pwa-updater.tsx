@@ -75,7 +75,7 @@ export function PwaUpdater() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-ink">A new version is ready</p>
           <p className="text-xs font-semibold text-ink-soft">
-            Update now to get the latest NoteWeaver.
+            Update now to get the latest Lumi.
           </p>
         </div>
         <button

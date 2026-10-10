@@ -15,8 +15,8 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden">
       {/* playful soft blobs */}
-      <span className="nw-blob -top-24 right-[-6%] h-[380px] w-[380px] bg-accent/25" aria-hidden />
-      <span className="nw-blob -bottom-32 left-[-8%] h-[320px] w-[320px] bg-lime/30" aria-hidden />
+      <span className="lumi-blob -top-24 right-[-6%] h-[380px] w-[380px] bg-accent/25" aria-hidden />
+      <span className="lumi-blob -bottom-32 left-[-8%] h-[320px] w-[320px] bg-lime/30" aria-hidden />
 
       <Container className="relative grid items-center gap-12 pt-16 pb-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pt-24 lg:pb-28">
         <div className="max-w-xl">

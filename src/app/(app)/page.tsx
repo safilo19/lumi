@@ -35,8 +35,8 @@ export default async function DashboardPage() {
 
       {/* hero */}
       <section className="relative mt-6 overflow-hidden rounded-[var(--radius-card)] bg-[linear-gradient(135deg,var(--accent),#7a6bff)] p-7 text-white shadow-[var(--shadow-pop)] sm:p-9">
-        <span className="nw-blob -right-10 -top-16 h-48 w-48 bg-white/20" />
-        <span className="nw-blob -bottom-20 left-10 h-44 w-44 bg-lime/30" />
+        <span className="lumi-blob -right-10 -top-16 h-48 w-48 bg-white/20" />
+        <span className="lumi-blob -bottom-20 left-10 h-44 w-44 bg-lime/30" />
         <div className="relative max-w-md">
           <h2 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
             Class starting? Catch every word.

@@ -20,14 +20,14 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "NoteWeaver: lecture recordings into beautiful notes",
+  title: "Lumi: lecture recordings into beautiful notes",
   description:
     "Record your lectures and get clean, well-organised study notes with diagrams, summaries and PDF export. Free for every CUST student.",
-  applicationName: "NoteWeaver",
+  applicationName: "Lumi",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "NoteWeaver",
+    title: "Lumi",
     statusBarStyle: "default",
   },
   icons: {
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
 };
 
 // Set the saved theme before paint so there is no flash of the wrong theme.
-const themeScript = `(function(){try{var t=localStorage.getItem("nw-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("lumi-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="paper-grain min-h-full flex flex-col">
         <Script
-          id="nw-theme-init"
+          id="lumi-theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />

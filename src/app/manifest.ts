@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 
-// Web app manifest — makes NoteWeaver installable to the home screen / desktop
+// Web app manifest — makes Lumi installable to the home screen / desktop
 // on Android, iOS, Windows, macOS and Linux from this single codebase.
 // Next.js serves this at /manifest.webmanifest and links it automatically.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "NoteWeaver — lecture notes for CUST",
-    short_name: "NoteWeaver",
+    name: "Lumi — lecture notes for CUST",
+    short_name: "Lumi",
     description:
       "Record your lectures and get clean study notes with diagrams, formulas and summaries. Free for every CUST student.",
     start_url: "/",

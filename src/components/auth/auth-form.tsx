@@ -56,7 +56,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   // __APPEND_RENDER__
   return (
     <div className="w-full max-w-sm">
-      <Link href="/" aria-label="NoteWeaver home" className="inline-block">
+      <Link href="/" aria-label="Lumi home" className="inline-block">
         <Logo />
       </Link>
 
@@ -136,7 +136,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               </>
             ) : (
               <>
-                New to NoteWeaver?{" "}
+                New to Lumi?{" "}
                 <Link href="/signup" className="font-semibold text-accent hover:underline">
                   Create an account
                 </Link>

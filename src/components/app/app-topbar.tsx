@@ -9,7 +9,7 @@ export function AppTopbar() {
   return (
     <header className="flex h-[64px] shrink-0 items-center gap-3 border-b-2 border-line bg-paper/80 px-4 backdrop-blur-md sm:px-6">
       {/* brand shows on mobile where the sidebar is hidden */}
-      <Link href="/" aria-label="NoteWeaver home" className="lg:hidden">
+      <Link href="/" aria-label="Lumi home" className="lg:hidden">
         <Logo />
       </Link>
 

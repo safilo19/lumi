@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * NoteWeaver design tokens — "Playful & vivid"
+ * Lumi design tokens — "Playful & vivid"
  * Palette: electric indigo + lime + coral on soft cream, deep plum ink.
  * Shape: pill buttons with a 3D bottom edge, fat rounded cards, blobs.
  * ------------------------------------------------------------------ */
@@ -181,7 +181,7 @@ body {
 }
 
 /* soft blurred background blob, decorative only */
-.nw-blob {
+.lumi-blob {
   position: absolute;
   border-radius: 9999px;
   filter: blur(60px);

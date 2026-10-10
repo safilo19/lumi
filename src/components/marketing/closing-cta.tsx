@@ -18,8 +18,8 @@ export function ClosingCta() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative overflow-hidden rounded-[var(--radius-card)] bg-accent px-6 py-16 text-center shadow-[var(--shadow-pop)] sm:px-12 lg:py-20"
         >
-          <span className="nw-blob -left-10 -top-16 h-56 w-56 bg-lime/40" aria-hidden />
-          <span className="nw-blob -bottom-16 -right-8 h-52 w-52 bg-coral/40" aria-hidden />
+          <span className="lumi-blob -left-10 -top-16 h-56 w-56 bg-lime/40" aria-hidden />
+          <span className="lumi-blob -bottom-16 -right-8 h-52 w-52 bg-coral/40" aria-hidden />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 opacity-20"

@@ -1,10 +1,10 @@
-# NoteWeaver
+# Lumi
 
 Turn your lectures into clean, beautiful study notes. Record a class, get
 organised notes with summaries, diagrams, formulas and a glossary — editable
 and exportable to PDF. Free for every CUST student.
 
-NoteWeaver is a **Progressive Web App (PWA)**: one codebase that installs like a
+Lumi is a **Progressive Web App (PWA)**: one codebase that installs like a
 native app on Android, iPhone/iPad, Windows, macOS and Linux, and updates itself
 in place — no app store, no download, no cost.
 
@@ -15,7 +15,7 @@ in place — no app store, no download, no cost.
 **iPhone & iPad (Safari):** open the site → **Share** → **Add to Home Screen**.
 
 **Windows / macOS / Linux (Chrome or Edge):** open the site → click the **install
-icon** in the address bar (or menu → **Install NoteWeaver**).
+icon** in the address bar (or menu → **Install Lumi**).
 
 Once installed it runs in its own window and keeps its icon on your home screen
 or desktop.

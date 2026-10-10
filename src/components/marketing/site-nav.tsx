@@ -10,7 +10,7 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-line bg-paper/80 backdrop-blur-md">
       <Container className="flex h-[68px] items-center justify-between gap-6">
-        <Link href="/" aria-label="NoteWeaver home">
+        <Link href="/" aria-label="Lumi home">
           <Logo />
         </Link>
 

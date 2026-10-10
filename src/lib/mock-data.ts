@@ -1,4 +1,4 @@
-// Mock data for the NoteWeaver app shell.
+// Mock data for the Lumi app shell.
 // Shapes here mirror the real DB schema we will back with Postgres later,
 // so screens built against this will swap over to live data with minimal churn.
 

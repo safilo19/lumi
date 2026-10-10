@@ -10,7 +10,7 @@ import { getUserById, type User } from "@/lib/db/users";
 // manage — revoking a session is just deleting its row.
 
 const COLLECTION = "sessions";
-export const SESSION_COOKIE = "nw_session";
+export const SESSION_COOKIE = "lumi_session";
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 type Session = {

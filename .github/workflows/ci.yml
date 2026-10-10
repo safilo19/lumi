@@ -1,6 +1,6 @@
 name: CI
 
-# Build NoteWeaver on every push and PR so a broken build never reaches a release.
+# Build Lumi on every push and PR so a broken build never reaches a release.
 on:
   push:
     branches: ["**"]

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { transcribeAudio, generateNote } from "@/lib/freerouter";
 
-// NoteWeaver MCP server (Streamable HTTP transport, JSON-RPC 2.0).
+// Lumi MCP server (Streamable HTTP transport, JSON-RPC 2.0).
 // Exposes the FreeRouter AI tools so any MCP client — the app itself, Claude
 // Desktop, a teacher's tooling — can transcribe audio and weave notes.
 // This is the "AI tools over MCP" backbone the product is built on.
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const PROTOCOL_VERSION = "2025-06-18";
-const SERVER_INFO = { name: "noteweaver", version: "0.1.0" };
+const SERVER_INFO = { name: "lumi", version: "0.1.0" };
 
 const TOOLS = [
   {

@@ -28,7 +28,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     try {
-      localStorage.setItem("nw-theme", next);
+      localStorage.setItem("lumi-theme", next);
     } catch {}
   }
 

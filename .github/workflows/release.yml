@@ -1,7 +1,7 @@
 name: Release
 
 # Cut a GitHub Release whenever a version tag (e.g. v0.1.0) is pushed.
-# NoteWeaver updates itself in the browser via the service worker, so a release
+# Lumi updates itself in the browser via the service worker, so a release
 # is a record + changelog rather than a downloadable binary. Tag with:
 #   npm version patch && git push --follow-tags
 on:

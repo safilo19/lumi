@@ -38,7 +38,7 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <LogoMark className={cn("h-8 w-8", markClassName)} />
       <span className="font-display text-[19px] font-semibold tracking-tight text-ink">
-        Note<span className="text-accent">Weaver</span>
+        Lu<span className="text-accent">mi</span>
       </span>
     </span>
   );
