@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * NoteWeaver design tokens — "Playful & vivid"
+ * Palette: electric indigo + lime + coral on soft cream, deep plum ink.
+ * Shape: pill buttons with a 3D bottom edge, fat rounded cards, blobs.
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* soft cream light theme */
+  --paper: #fbf5e9;
+  --surface: #fffdf8;
+  --surface-2: #f4ecdc;
+  --ink: #241c33;
+  --ink-soft: #6e6683;
+  --ink-faint: #a79fb8;
+  --line: #ece2d0;
+  --line-strong: #dccfb8;
+
+  /* primary accent: electric indigo */
+  --accent: #5b4df6;
+  --accent-hover: #4a3ce0;
+  --accent-deep: #3a2cd0;
+  --accent-ink: #ffffff;
+  --accent-weak: #ece9ff;
+  --accent-weak-ink: #39318a;
+
+  /* secondary pop: lime */
+  --lime: #c6f24e;
+  --lime-deep: #8bb800;
+  --lime-ink: #2b3a00;
+  --lime-weak: #f0facb;
+  --lime-weak-ink: #4c5e00;
+
+  /* tertiary pop: coral */
+  --coral: #ff6b5b;
+  --coral-deep: #e24433;
+  --coral-ink: #ffffff;
+  --coral-weak: #ffe6e0;
+  --coral-weak-ink: #b5362a;
+
+  --highlight: #fff0d6;
+
+  --radius-card: 26px;
+  --radius-input: 16px;
+  --shadow-card: 0 2px 0 rgb(36 28 51 / 0.04), 0 14px 30px -16px rgb(36 28 51 / 0.22);
+  --shadow-pop: 0 4px 0 rgb(36 28 51 / 0.05), 0 26px 56px -22px rgb(36 28 51 / 0.3);
+}
+/* PLACEHOLDER_DARK */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #17141f;
+    --surface: #201b2c;
+    --surface-2: #2a2439;
+    --ink: #f3effa;
+    --ink-soft: #b3abc6;
+    --ink-faint: #7d7593;
+    --line: #322b45;
+    --line-strong: #403753;
+
+    --accent: #7a6bff;
+    --accent-hover: #8c7fff;
+    --accent-deep: #4a3ce0;
+    --accent-ink: #ffffff;
+    --accent-weak: #262146;
+    --accent-weak-ink: #c9c2ff;
+
+    --lime: #c6f24e;
+    --lime-deep: #8bb800;
+    --lime-ink: #1b2400;
+    --lime-weak: #26300a;
+    --lime-weak-ink: #d6f77a;
+
+    --coral: #ff7a6b;
+    --coral-deep: #e24433;
+    --coral-ink: #ffffff;
+    --coral-weak: #3a211e;
+    --coral-weak-ink: #ffb3a8;
+
+    --highlight: #2a2419;
+
+    --shadow-card: 0 2px 0 rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+    --shadow-pop: 0 4px 0 rgb(0 0 0 / 0.5), 0 28px 70px -22px rgb(0 0 0 / 0.7);
+  }
+}
+/* PLACEHOLDER_DARK2 */
+:root[data-theme="dark"] {
+  --paper: #17141f;
+  --surface: #201b2c;
+  --surface-2: #2a2439;
+  --ink: #f3effa;
+  --ink-soft: #b3abc6;
+  --ink-faint: #7d7593;
+  --line: #322b45;
+  --line-strong: #403753;
+
+  --accent: #7a6bff;
+  --accent-hover: #8c7fff;
+  --accent-deep: #4a3ce0;
+  --accent-ink: #ffffff;
+  --accent-weak: #262146;
+  --accent-weak-ink: #c9c2ff;
+
+  --lime: #c6f24e;
+  --lime-deep: #8bb800;
+  --lime-ink: #1b2400;
+  --lime-weak: #26300a;
+  --lime-weak-ink: #d6f77a;
+
+  --coral: #ff7a6b;
+  --coral-deep: #e24433;
+  --coral-ink: #ffffff;
+  --coral-weak: #3a211e;
+  --coral-weak-ink: #ffb3a8;
+
+  --highlight: #2a2419;
+
+  --shadow-card: 0 2px 0 rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+  --shadow-pop: 0 4px 0 rgb(0 0 0 / 0.5), 0 28px 70px -22px rgb(0 0 0 / 0.7);
+}
+/* PLACEHOLDER_THEME */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-weak: var(--accent-weak);
+  --color-accent-weak-ink: var(--accent-weak-ink);
+
+  --color-lime: var(--lime);
+  --color-lime-deep: var(--lime-deep);
+  --color-lime-ink: var(--lime-ink);
+  --color-lime-weak: var(--lime-weak);
+  --color-lime-weak-ink: var(--lime-weak-ink);
+
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
+  --color-coral-ink: var(--coral-ink);
+  --color-coral-weak: var(--coral-weak);
+  --color-coral-weak-ink: var(--coral-weak-ink);
+
+  --color-highlight: var(--highlight);
+
+  --font-display: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 26px;
+  --radius-input: 16px;
+}
+/* PLACEHOLDER_BASE */
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+
+/* soft blurred background blob, decorative only */
+.nw-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* very subtle grain so the cream never looks flat/digital */
+.paper-grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Export PDF = browser print-to-PDF. Isolate the note content: hide the app
+   chrome, release the on-screen viewport locks (100dvh / overflow-hidden) that
+   would otherwise clip the note to a single page, and keep the brand colors. */
+@media print {
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #note-print-area,
+  #note-print-area * {
+    visibility: visible;
+  }
+
+  #note-print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 1.25rem 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  .paper-grain::after {
+    display: none !important;
+  }
+}
