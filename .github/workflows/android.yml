@@ -96,17 +96,30 @@ jobs:
           node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionCode=${{ github.run_number }};if(process.env.KEY_ALIAS)m.signingKey.alias=process.env.KEY_ALIAS;require('fs').writeFileSync(f,JSON.stringify(m,null,2));"
           cat twa-manifest.json
 
-      - name: Pre-accept Android SDK licenses
+      - name: Accept SDK licenses and pre-install build tools
         run: |
-          # `bubblewrap build` shells out to `sdkmanager --install
-          # "build-tools;36.1.0"`, which prints an interactive "Accept? (y/N)"
-          # license prompt whenever that package's license hasn't been accepted
-          # yet. Our build pipes `yes ""` (blank lines) into bubblewrap, and a
-          # blank line is NOT "y", so sdkmanager re-prompts forever and the step
-          # hangs indefinitely. Accept every SDK license up front (feeding real
-          # "y"s) so the later install runs non-interactively.
-          yes | "$ANDROID_HOME/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
-          echo "licenses accepted"
+          # Earlier `yes | sdkmanager --licenses` ran via the symlinked
+          # sdkmanager, silently no-opped (hidden by `|| true` + `>/dev/null`),
+          # and left the build-tools license UNaccepted. `bubblewrap build` then
+          # ran `sdkmanager --install "build-tools;36.1.0"`, hit the "Accept?
+          # (y/N)" prompt, and our blank-line stdin never answered "y" — it
+          # re-prompted in a tight loop, producing ~1.8 GB of output until the
+          # timeout killed it. Fix both halves:
+          #
+          # 1) Accept licenses WITHOUT depending on sdkmanager, by writing the
+          #    well-known public license-hash files directly. This is the
+          #    canonical headless-CI method and cannot silently no-op.
+          mkdir -p "$ANDROID_HOME/licenses"
+          printf '\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n' > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf '\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910\n' > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          # 2) Pre-install exactly what bubblewrap requests, using the REAL
+          #    sdkmanager (full path, not the symlink), so bubblewrap's own
+          #    install is a no-op and never prompts. Show output + exit code.
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)"
+          echo "sdkmanager: $SDKMGR"
+          "$SDKMGR" --install "platform-tools" "build-tools;36.1.0" "platforms;android-36" 2>&1 | tail -25
+          echo "install exit: ${PIPESTATUS[0]}"
+          "$SDKMGR" --list_installed 2>&1 | head -40 || true
 
       - name: Build signed APK
         working-directory: android
@@ -114,12 +127,15 @@ jobs:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
-          set -o pipefail
-          # `build` regenerates the Android project from twa-manifest.json; the
-          # piped blank lines answer any "regenerate project?" confirmation.
-          # `timeout` is a safety net: if anything still blocks on stdin, fail
-          # the step in 20 min instead of hanging for the 6-hour job limit.
-          timeout 1200 bash -c 'yes "" | bubblewrap build --skipPwaValidation' || true
+          set +o pipefail
+          # Licenses are pre-accepted and build-tools pre-installed by the prior
+          # step, so bubblewrap's own `sdkmanager --install` is a no-op and
+          # nothing should prompt. Feed a FINITE set of blank lines (not an
+          # endless `yes`) to answer any stray "regenerate project?" prompt; if
+          # something unexpectedly re-prompts it hits EOF and fails fast instead
+          # of looping into a multi-GB log. `tail` caps the captured output and
+          # `timeout` is the final backstop against a hang.
+          timeout 1200 bash -c 'yes "" | head -n 200 | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
           test -f app-release-signed.apk
 
       - name: Collect APK
