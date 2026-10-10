@@ -45,6 +45,12 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+        with:
+          # The action's default `packages` is "tools platform-tools", but the
+          # legacy "tools" package was removed from the SDK repo, so installing
+          # it fails ("Failed to find package 'tools'"). Install only
+          # platform-tools; Bubblewrap pulls the build-tools/platforms it needs.
+          packages: platform-tools
 
       - name: Install Bubblewrap
         run: npm i -g @bubblewrap/cli
