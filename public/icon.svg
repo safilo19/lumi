@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Lumi">
+  <defs>
+    <radialGradient id="lumiGlow" cx="42%" cy="55%" r="58%">
+      <stop offset="0%" stop-color="#8a7dff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#5b4df6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- full-bleed indigo tile (keeps maskable crops safe) -->
   <rect width="512" height="512" fill="#5b4df6"/>
-  <g>
-    <rect x="150" y="116" width="212" height="280" rx="30" fill="#fffdf8"/>
-    <rect x="150" y="116" width="212" height="280" rx="30" fill="none" stroke="#3a2cd0" stroke-width="0" opacity="0"/>
-    <!-- note lines -->
-    <rect x="182" y="168" width="148" height="20" rx="10" fill="#241c33"/>
-    <rect x="182" y="214" width="148" height="20" rx="10" fill="#5b4df6"/>
-    <rect x="182" y="260" width="148" height="20" rx="10" fill="#c6f24e"/>
-    <rect x="182" y="306" width="96" height="20" rx="10" fill="#ff6b5b"/>
-  </g>
-  <!-- spark accent -->
-  <circle cx="360" cy="140" r="34" fill="#c6f24e"/>
-  <path d="M360 118 l7 15 15 7 -15 7 -7 15 -7 -15 -15 -7 15 -7 z" fill="#241c33"/>
+  <rect width="512" height="512" fill="url(#lumiGlow)"/>
+  <!-- Lumi mark: a rising trail of light — three concave sparks in the brand triad -->
+  <path d="M216,178 Q216,284 322,284 Q216,284 216,390 Q216,284 110,284 Q216,284 216,178 Z" fill="#fffdf8"/>
+  <path d="M320,138 Q320,196 378,196 Q320,196 320,254 Q320,196 262,196 Q320,196 320,138 Z" fill="#c6f24e"/>
+  <path d="M374,91 Q374,118 401,118 Q374,118 374,145 Q374,118 347,118 Q374,118 374,91 Z" fill="#ff6b5b"/>
 </svg>

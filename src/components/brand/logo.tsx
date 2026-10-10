@@ -9,19 +9,20 @@ export function LogoMark({ className }: { className?: string }) {
       )}
       aria-hidden
     >
-      {/* simple geometric mark: woven sheets */}
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        className="h-[60%] w-[60%]"
-        strokeWidth={2}
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 7.5 12 4l8 3.5-8 3.5-8-3.5Z" />
-        <path d="M4 12.5 12 16l8-3.5" />
-        <path d="M4 17 12 20l8-3" opacity={0.6} />
+      {/* Lumi mark: a rising trail of light — three concave sparks */}
+      <svg viewBox="0 0 24 24" className="h-[62%] w-[62%]">
+        <path
+          d="M10,8.3 Q10,13.5 15.2,13.5 Q10,13.5 10,18.7 Q10,13.5 4.8,13.5 Q10,13.5 10,8.3 Z"
+          fill="#fffdf8"
+        />
+        <path
+          d="M15.5,6.1 Q15.5,9 18.4,9 Q15.5,9 15.5,11.9 Q15.5,9 12.6,9 Q15.5,9 15.5,6.1 Z"
+          fill="#c6f24e"
+        />
+        <path
+          d="M18.3,3.8 Q18.3,5.3 19.8,5.3 Q18.3,5.3 18.3,6.8 Q18.3,5.3 16.8,5.3 Q18.3,5.3 18.3,3.8 Z"
+          fill="#ff6b5b"
+        />
       </svg>
     </span>
   );
