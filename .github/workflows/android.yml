@@ -128,19 +128,20 @@ jobs:
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set +o pipefail
-          # `bubblewrap build` ITSELF prompts interactively (inquirer), e.g.
-          # "? versionName for the new App version:" — the version-bump
-          # confirmation. These prompts all have defaults (appVersionName /
-          # appVersionCode from twa-manifest.json), so a blank line accepts the
-          # default. The trap: a *finite* feed (`yes "" | head -n 200`) closes
-          # stdin, and the pipe closing fires inquirer's onForceClose →
-          # `ERR_USE_AFTER_CLOSE: readline was closed` → instant crash, even
-          # though the blanks were correct. So feed an ENDLESS `yes ""`: stdin
-          # never closes, every prompt gets its default, and when bubblewrap
-          # exits `yes` dies on SIGPIPE. The old multi-GB flood can't recur now
-          # that licenses are pre-accepted (no reprompt loop); `tail` still caps
-          # captured output and `timeout` is the final backstop against a hang.
-          timeout 1200 bash -c 'yes "" | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
+          # bubblewrap build's version-update flow prompts
+          # "? versionName for the new App version:" and REJECTS a blank line,
+          # re-prompting forever (observed: 79 reprompts until the 20-min
+          # timeout). So blank/`yes ""` input never satisfies it. Feed the REAL
+          # versionName + versionCode as the first two answers, then an endless
+          # `yes ""` for any later prompt/confirm. Explicit values satisfy the
+          # required inputs; the trailing endless feed means stdin never closes,
+          # so inquirer never force-closes (no ERR_USE_AFTER_CLOSE) and the build
+          # proceeds to produce the signed APK. `tail` caps the log and
+          # `timeout` is the final backstop against an unexpected hang.
+          export VNAME="$(node -p "require('./twa-manifest.json').appVersionName || '1.0.0'")"
+          export VCODE="${{ github.run_number }}"
+          echo "feeding versionName=$VNAME versionCode=$VCODE"
+          timeout 1200 bash -c '{ printf "%s\n%s\n" "$VNAME" "$VCODE"; yes ""; } | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
           test -f app-release-signed.apk
 
       - name: Collect APK
