@@ -96,6 +96,18 @@ jobs:
           node -e "const f='twa-manifest.json',m=require('./'+f);m.appVersionCode=${{ github.run_number }};if(process.env.KEY_ALIAS)m.signingKey.alias=process.env.KEY_ALIAS;require('fs').writeFileSync(f,JSON.stringify(m,null,2));"
           cat twa-manifest.json
 
+      - name: Pre-accept Android SDK licenses
+        run: |
+          # `bubblewrap build` shells out to `sdkmanager --install
+          # "build-tools;36.1.0"`, which prints an interactive "Accept? (y/N)"
+          # license prompt whenever that package's license hasn't been accepted
+          # yet. Our build pipes `yes ""` (blank lines) into bubblewrap, and a
+          # blank line is NOT "y", so sdkmanager re-prompts forever and the step
+          # hangs indefinitely. Accept every SDK license up front (feeding real
+          # "y"s) so the later install runs non-interactively.
+          yes | "$ANDROID_HOME/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          echo "licenses accepted"
+
       - name: Build signed APK
         working-directory: android
         env:
@@ -105,7 +117,9 @@ jobs:
           set -o pipefail
           # `build` regenerates the Android project from twa-manifest.json; the
           # piped blank lines answer any "regenerate project?" confirmation.
-          yes "" | bubblewrap build --skipPwaValidation || true
+          # `timeout` is a safety net: if anything still blocks on stdin, fail
+          # the step in 20 min instead of hanging for the 6-hour job limit.
+          timeout 1200 bash -c 'yes "" | bubblewrap build --skipPwaValidation' || true
           test -f app-release-signed.apk
 
       - name: Collect APK
