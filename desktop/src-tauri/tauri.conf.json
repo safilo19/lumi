@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lumi",
+  "version": "0.1.3",
+  "identifier": "pk.edu.cust.lumi",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Lumi",
+        "url": "APP_URL_PLACEHOLDER",
+        "width": 440,
+        "height": 900,
+        "minWidth": 360,
+        "minHeight": 600,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Education",
+    "shortDescription": "Lecture notes for CUST",
+    "longDescription": "Record lectures and turn them into clean, organized study notes. Lumi is a thin desktop wrapper around the Lumi web app."
+  }
+}

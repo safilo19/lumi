@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "pk.edu.cust.lumi",
+      "sha256_cert_fingerprints": [
+        "84:76:BC:6E:0A:A9:0C:B8:57:7B:B9:04:29:94:BF:B9:0A:1A:93:08:E0:05:BD:D8:FF:C0:60:10:D4:2C:56:4B"
+      ]
+    }
+  }
+]

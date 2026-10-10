@@ -1,0 +1,100 @@
+name: Build desktop apps (Windows/macOS/Linux)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "HTTPS URL of the deployed Lumi site. Leave blank to use the APP_URL repo variable."
+        required: false
+        default: ""
+  workflow_call:
+    inputs:
+      app_url:
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: windows-latest
+          - os: macos-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve APP_URL
+        id: url
+        run: |
+          URL="${{ inputs.app_url }}"
+          [ -z "$URL" ] && URL="${{ vars.APP_URL }}"
+          if [ -z "$URL" ]; then
+            echo "::error::No APP_URL. Pass the app_url input or set the APP_URL repo variable."
+            exit 1
+          fi
+          echo "url=${URL%/}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev file
+
+      - name: Install Tauri CLI
+        working-directory: desktop
+        run: npm install
+
+      - name: Bake in the deployed URL
+        run: node -e "const f='desktop/src-tauri/tauri.conf.json',fs=require('fs');fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('APP_URL_PLACEHOLDER','${{ steps.url.outputs.url }}'))"
+
+      - name: Generate app icons from public/icon-512.png
+        working-directory: desktop
+        run: npx tauri icon ../public/icon-512.png
+
+      - name: Build desktop bundles
+        working-directory: desktop
+        run: npx tauri build
+
+      - name: Collect installers
+        id: collect
+        run: |
+          mkdir -p dist-out
+          find desktop/src-tauri/target/release/bundle \
+            -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' \
+            -o -name '*.msi' -o -name '*.exe' -o -name '*.dmg' \) \
+            -exec cp {} dist-out/ \;
+          ls -la dist-out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumi-desktop-${{ matrix.os }}
+          path: dist-out/*
+
+      - name: Attach installers to the GitHub Release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist-out/* --clobber
+
+

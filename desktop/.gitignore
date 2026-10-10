@@ -1,0 +1,6 @@
+# Rust / Tauri build artifacts
+src-tauri/target/
+# Icons are generated in CI from ../public/icon-512.png via `tauri icon`
+src-tauri/icons/
+# Tauri auto-generated capability/gen files
+src-tauri/gen/
