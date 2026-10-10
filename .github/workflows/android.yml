@@ -56,7 +56,16 @@ jobs:
         run: npm i -g @bubblewrap/cli
 
       - name: Point Bubblewrap at the runner JDK and Android SDK
-        run: bubblewrap updateConfig --jdkPath "$JAVA_HOME" --androidSdkPath "$ANDROID_HOME"
+        run: |
+          # `bubblewrap updateConfig` calls loadOrCreateConfig(), which prompts
+          # interactively ("install the JDK?") whenever ~/.bubblewrap/config.json
+          # is missing or has an empty jdkPath/androidSdkPath — fatal in CI
+          # (readline ERR_USE_AFTER_CLOSE). Write the config file directly with
+          # both paths pre-filled; Config.loadConfig reads these exact field
+          # names, so loadOrCreateConfig finds them set and never prompts.
+          mkdir -p "$HOME/.bubblewrap"
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
+          cat "$HOME/.bubblewrap/config.json"
 
       - name: Restore signing keystore from secret
         env:
