@@ -121,6 +121,23 @@ jobs:
           echo "install exit: ${PIPESTATUS[0]}"
           "$SDKMGR" --list_installed 2>&1 | head -40 || true
 
+      - name: Generate the TWA Android project (gradlew etc.) from twa-manifest.json
+        working-directory: android
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set +o pipefail
+          # `android/` holds only twa-manifest.json — the native Gradle project
+          # (gradlew, build.gradle, app/) is NOT committed, so `bubblewrap build`
+          # fails with `./gradlew: not found`. `bubblewrap update` regenerates
+          # the whole project (incl. the gradle wrapper) from twa-manifest.json.
+          # Feed endless blanks in case it prompts; stdin never closes so
+          # inquirer can't force-close. `timeout` backstops any hang.
+          timeout 600 bash -c 'yes "" | bubblewrap update' 2>&1 | tail -n 60 || true
+          ls -la
+          test -f gradlew
+
       - name: Build signed APK
         working-directory: android
         env:
