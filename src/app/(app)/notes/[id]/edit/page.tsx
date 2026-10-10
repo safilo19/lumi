@@ -1,15 +1,25 @@
+"use client";
+import { use } from "react";
 import { notFound } from "next/navigation";
 import { NoteEditor } from "@/components/app/note-editor";
-import { getNote } from "@/lib/db/notes";
+import { useNote } from "@/lib/local/use-notes";
 import { courseById } from "@/lib/mock-data";
 
-export default async function EditNotePage({
+export default function EditNotePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const note = await getNote(id);
+  const { id } = use(params);
+  const { data: note, loading } = useNote(id);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl py-16 text-center text-ink-soft">
+        Loading note…
+      </div>
+    );
+  }
   if (!note) notFound();
 
   const course = courseById(note.courseId);

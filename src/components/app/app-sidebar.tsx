@@ -8,7 +8,6 @@ import {
   BooksIcon,
   CaretRightIcon,
   GearSixIcon,
-  SignOutIcon,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
 import { courses } from "@/lib/mock-data";
@@ -19,16 +18,8 @@ const nav = [
   { href: "/record", label: "New recording", icon: MicrophoneIcon },
 ];
 
-export type SidebarUser = { name: string; role: string };
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p.charAt(0).toUpperCase()).join("") || "NW";
-}
-
-export function AppSidebar({ user }: { user?: SidebarUser | null }) {
+export function AppSidebar() {
   const pathname = usePathname();
-  const roleLabel = user?.role === "teacher" ? "CUST teacher" : "CUST student";
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r-2 border-line bg-surface/50 lg:flex">
@@ -96,34 +87,21 @@ export function AppSidebar({ user }: { user?: SidebarUser | null }) {
       </div>
 
       <div className="border-t-2 border-line p-3">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/settings"
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--radius-input)] border-2 border-transparent px-2 py-2 transition-colors hover:border-line hover:bg-surface-2"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent font-display text-sm font-semibold text-accent-ink">
-              {initials(user?.name ?? "")}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-ink">
-                {user?.name ?? "Your account"}
-              </span>
-              <span className="block truncate text-xs font-semibold text-ink-faint">
-                {roleLabel}
-              </span>
-            </span>
-            <GearSixIcon size={16} weight="bold" className="shrink-0 text-ink-faint" />
-          </Link>
-          <form action="/api/auth/logout" method="post">
-            <button
-              type="submit"
-              aria-label="Sign out"
-              className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-input)] border-2 border-transparent text-ink-faint transition-colors hover:border-line hover:bg-surface-2 hover:text-coral"
-            >
-              <SignOutIcon size={17} weight="bold" />
-            </button>
-          </form>
-        </div>
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-3 rounded-[var(--radius-input)] border-2 border-transparent px-3 py-2.5 text-[15px] font-semibold transition-colors",
+            pathname === "/settings"
+              ? "bg-accent-weak font-display text-accent-weak-ink"
+              : "text-ink-soft hover:bg-surface-2 hover:text-ink",
+          )}
+        >
+          <GearSixIcon
+            size={19}
+            weight={pathname === "/settings" ? "fill" : "bold"}
+          />
+          Settings
+        </Link>
       </div>
     </aside>
   );

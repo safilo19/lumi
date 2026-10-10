@@ -1,9 +1,10 @@
+"use client";
 import Link from "next/link";
 import { courses } from "@/lib/mock-data";
-import { countNotesByCourse } from "@/lib/db/notes";
+import { useNoteCounts } from "@/lib/local/use-notes";
 
-export default async function CoursesPage() {
-  const counts = await countNotesByCourse();
+export default function CoursesPage() {
+  const { data: counts } = useNoteCounts();
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">

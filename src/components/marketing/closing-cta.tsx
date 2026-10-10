@@ -36,7 +36,7 @@ export function ClosingCta() {
             waiting.
           </p>
           <div className="relative mt-8 flex justify-center">
-            <Link href="/signup">
+            <Link href="/">
               <Button size="lg" variant="secondary" className="group">
                 Start free
                 <ArrowRightIcon

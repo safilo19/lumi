@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { SunIcon, MoonIcon } from "@phosphor-icons/react";
 
 type Theme = "light" | "dark";
@@ -14,18 +14,30 @@ function current(): Theme {
     : "light";
 }
 
-export function ThemeToggle({ className }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+// Re-render whenever the active theme changes: either another component flips
+// the data-theme attribute, or the OS colour-scheme preference changes.
+function subscribe(cb: () => void) {
+  const observer = new MutationObserver(cb);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", cb);
+  return () => {
+    observer.disconnect();
+    mq.removeEventListener("change", cb);
+  };
+}
 
-  useEffect(() => {
-    setTheme(current());
-    setMounted(true);
-  }, []);
+export function ThemeToggle({ className }: { className?: string }) {
+  // Reading the theme through an external store (rather than syncing it into
+  // state from an effect) keeps SSR consistent: the server snapshot is "light",
+  // and the real value is applied in a single re-render after hydration.
+  const theme = useSyncExternalStore(subscribe, current, () => "light" as Theme);
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     try {
       localStorage.setItem("lumi-theme", next);
@@ -42,7 +54,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         (className ?? "")
       }
     >
-      {mounted && theme === "dark" ? (
+      {theme === "dark" ? (
         <SunIcon size={18} weight="bold" />
       ) : (
         <MoonIcon size={18} weight="bold" />

@@ -2,9 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { cn } from "@/lib/utils";
 
 export function SiteNav() {
   return (
@@ -28,17 +26,8 @@ export function SiteNav() {
 
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <Link
-            href="/login"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "hidden sm:inline-flex",
-            )}
-          >
-            Sign in
-          </Link>
-          <Link href="/signup">
-            <Button size="sm">Start free</Button>
+          <Link href="/">
+            <Button size="sm">Open Lumi</Button>
           </Link>
         </div>
       </Container>

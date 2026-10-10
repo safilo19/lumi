@@ -1,8 +1,9 @@
+"use client";
 import { NoteCard } from "@/components/app/note-card";
-import { listNotes } from "@/lib/db/notes";
+import { useNotes } from "@/lib/local/use-notes";
 
-export default async function LibraryPage() {
-  const all = await listNotes();
+export default function LibraryPage() {
+  const { data: all } = useNotes();
 
   return (
     <div className="mx-auto max-w-5xl">

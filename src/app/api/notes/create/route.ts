@@ -4,8 +4,6 @@ import {
   generateNote,
   AllProvidersFailedError,
 } from "@/lib/freerouter";
-import { createNote } from "@/lib/db/notes";
-import { getCurrentUser } from "@/lib/auth/session";
 import type { Note } from "@/lib/mock-data";
 
 // Transcription + generation can take a while on long lectures.
@@ -25,8 +23,10 @@ function normalizeLanguage(raw: string): Note["language"] {
 /**
  * POST /api/notes/create
  * multipart/form-data: audio=<file>, courseId=<string?>, language=<string?>
- * Runs the FreeRouter pipeline (STT -> note generation) and returns a note
- * whose blocks render directly through <NoteBlocks />.
+ * Runs the FreeRouter pipeline (STT -> note generation) and returns the woven
+ * note. This route generates only — it never persists. The AI keys live here on
+ * the server; the browser takes the returned note and saves it to its own local
+ * IndexedDB store, so each device keeps only its own notes (the Obsidian model).
  */
 export async function POST(request: Request) {
   let form: FormData;
@@ -62,29 +62,18 @@ export async function POST(request: Request) {
     audio instanceof File && audio.name ? audio.name : "lecture.webm";
 
   try {
-    const user = await getCurrentUser();
     const transcript = await transcribeAudio({ audio, filename, language });
     const note = await generateNote(transcript.text);
 
-    const saved = await createNote({
-      title: note.title,
-      courseId: courseId ?? "cs2033",
-      language: normalizeLanguage(note.language),
-      blocks: note.blocks,
-      lecturer: user?.name,
-      durationMin: Number.isFinite(durationSec)
-        ? Math.max(1, Math.round(durationSec / 60))
-        : 0,
-      ownerId: user?.id ?? null,
-    });
-
     return NextResponse.json({
       note: {
-        id: saved.id,
-        title: saved.title,
-        language: saved.language,
-        blocks: saved.blocks,
-        courseId: saved.courseId,
+        title: note.title,
+        courseId: courseId ?? "cs2033",
+        language: normalizeLanguage(note.language),
+        blocks: note.blocks,
+        durationMin: Number.isFinite(durationSec)
+          ? Math.max(1, Math.round(durationSec / 60))
+          : 0,
       },
       transcript: transcript.text,
       diagnostics: {

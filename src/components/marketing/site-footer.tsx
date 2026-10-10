@@ -20,8 +20,8 @@ export function SiteFooter() {
           <a className="transition-colors hover:text-ink" href="#features">
             Features
           </a>
-          <Link className="transition-colors hover:text-ink" href="/login">
-            Sign in
+          <Link className="transition-colors hover:text-ink" href="/">
+            Open Lumi
           </Link>
         </nav>
       </Container>

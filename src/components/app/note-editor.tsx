@@ -18,6 +18,7 @@ import {
   FlowArrowIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { updateNote } from "@/lib/local/notes";
 import type { NoteBlock } from "@/lib/mock-data";
 
 type Kind = NoteBlock["kind"];
@@ -102,13 +103,11 @@ export function NoteEditor({
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/notes/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), blocks: cleanBlocks(blocks) }),
+      const updated = await updateNote(id, {
+        title: title.trim(),
+        blocks: cleanBlocks(blocks),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Could not save your changes.");
+      if (!updated) throw new Error("This note no longer exists.");
       router.push(`/notes/${id}`);
       router.refresh();
     } catch (err) {

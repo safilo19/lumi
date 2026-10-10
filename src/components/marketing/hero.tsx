@@ -55,7 +55,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.22, ease }}
             className="mt-8 flex flex-wrap items-center gap-3"
           >
-            <Link href="/signup">
+            <Link href="/">
               <Button size="lg" className="group">
                 Start free
                 <ArrowRightIcon

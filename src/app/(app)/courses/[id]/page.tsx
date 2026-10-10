@@ -1,21 +1,22 @@
+"use client";
+import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, MicrophoneIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeftIcon, MicrophoneIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
 import { courseById } from "@/lib/mock-data";
-import { listNotesForCourse } from "@/lib/db/notes";
+import { useCourseNotes } from "@/lib/local/use-notes";
 
-export default async function CoursePage({
+export default function CoursePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id } = use(params);
   const course = courseById(id);
+  const { data: courseNotes } = useCourseNotes(id);
   if (!course) notFound();
-
-  const courseNotes = await listNotesForCourse(course.id);
 
   return (
     <div className="mx-auto max-w-5xl">

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
   SparkleIcon,
-  WaveformIcon,
   GraduationCapIcon,
 } from "@phosphor-icons/react/dist/ssr";
 

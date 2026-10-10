@@ -15,16 +15,19 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteBlocks } from "@/components/app/note-blocks";
-import { courses, type NoteBlock } from "@/lib/mock-data";
+import { courses, type Note, type NoteBlock } from "@/lib/mock-data";
+import { createNote } from "@/lib/local/notes";
 
 type Phase = "idle" | "recording" | "processing" | "done" | "error";
 
+// What /api/notes/create returns: a generated note, not yet persisted. The id,
+// recordedAt, and lecturer are assigned locally when we save it to IndexedDB.
 type GeneratedNote = {
-  id: string;
   title: string;
-  language: string;
+  courseId: string;
+  language: Note["language"];
   blocks: NoteBlock[];
-  courseId?: string;
+  durationMin: number;
 };
 
 function formatTime(s: number) {
@@ -56,7 +59,7 @@ export default function RecordPage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
   const [courseId, setCourseId] = useState(courses[0].id);
-  const [note, setNote] = useState<GeneratedNote | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
   const [error, setError] = useState("");
 
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -103,7 +106,17 @@ export default function RecordPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
-        setNote(data.note as GeneratedNote);
+        // The route generates only; persist the note to this device's local
+        // store, then hold the saved copy (now with an id) for the result view.
+        const generated = data.note as GeneratedNote;
+        const saved = await createNote({
+          title: generated.title,
+          courseId: generated.courseId,
+          language: generated.language,
+          blocks: generated.blocks,
+          durationMin: generated.durationMin,
+        });
+        setNote(saved);
         setPhase("done");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -159,7 +172,8 @@ export default function RecordPage() {
     setNote(null);
     setError("");
   }, []);
-  // Done: no persistence layer yet, so render the freshly woven note in place.
+  // Done: the note is already saved to this device's local library; show it in
+  // place with a link through to its permanent page.
   if (phase === "done" && note) {
     const course = courses.find((c) => c.id === note.courseId);
     return (

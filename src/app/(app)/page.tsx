@@ -1,15 +1,15 @@
+"use client";
 import Link from "next/link";
 import {
   MicrophoneIcon,
   PlusIcon,
   FireIcon,
   ArrowRightIcon,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
 import { courses } from "@/lib/mock-data";
-import { listNotes } from "@/lib/db/notes";
-import { getCurrentUser } from "@/lib/auth/session";
+import { useNotes } from "@/lib/local/use-notes";
 
 const courseTints = [
   "bg-accent text-accent-ink",
@@ -17,15 +17,14 @@ const courseTints = [
   "bg-lime text-lime-ink",
 ];
 
-export default async function DashboardPage() {
-  const [recent, user] = await Promise.all([listNotes(), getCurrentUser()]);
-  const firstName = user?.name.split(" ")[0] ?? "there";
+export default function DashboardPage() {
+  const { data: recent } = useNotes();
 
   return (
     <div className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Hey {firstName}
+          Hey there
         </h1>
         <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-coral-weak-ink/15 bg-coral-weak px-3.5 py-1.5 font-display text-sm font-semibold text-coral-weak-ink">
           <FireIcon size={16} weight="fill" />
