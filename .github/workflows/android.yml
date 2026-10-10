@@ -132,9 +132,18 @@ jobs:
           # (gradlew, build.gradle, app/) is NOT committed, so `bubblewrap build`
           # fails with `./gradlew: not found`. `bubblewrap update` regenerates
           # the whole project (incl. the gradle wrapper) from twa-manifest.json.
-          # Feed endless blanks in case it prompts; stdin never closes so
-          # inquirer can't force-close. `timeout` backstops any hang.
-          timeout 600 bash -c 'yes "" | bubblewrap update' 2>&1 | tail -n 60 || true
+          #
+          # `bubblewrap update` ALSO runs the version-update flow and prompts
+          # "? versionName for the new App version:", which REJECTS a blank line
+          # (">> Minimum length is 1 but input is 0.") and re-prompts forever —
+          # a blank `yes ""` feed looped for the full 600s until timeout killed
+          # it. Same fix as the build step: feed the REAL versionName +
+          # versionCode as the first two answers, then an endless `yes ""` for
+          # any later prompt so stdin never closes (no ERR_USE_AFTER_CLOSE).
+          export VNAME="$(node -p "require('./twa-manifest.json').appVersionName || '1.0.0'")"
+          export VCODE="${{ github.run_number }}"
+          echo "feeding versionName=$VNAME versionCode=$VCODE"
+          timeout 600 bash -c '{ printf "%s\n%s\n" "$VNAME" "$VCODE"; yes ""; } | bubblewrap update' 2>&1 | tail -n 60 || true
           ls -la
           test -f gradlew
 
