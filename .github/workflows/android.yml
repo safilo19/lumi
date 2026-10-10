@@ -128,14 +128,19 @@ jobs:
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set +o pipefail
-          # Licenses are pre-accepted and build-tools pre-installed by the prior
-          # step, so bubblewrap's own `sdkmanager --install` is a no-op and
-          # nothing should prompt. Feed a FINITE set of blank lines (not an
-          # endless `yes`) to answer any stray "regenerate project?" prompt; if
-          # something unexpectedly re-prompts it hits EOF and fails fast instead
-          # of looping into a multi-GB log. `tail` caps the captured output and
-          # `timeout` is the final backstop against a hang.
-          timeout 1200 bash -c 'yes "" | head -n 200 | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
+          # `bubblewrap build` ITSELF prompts interactively (inquirer), e.g.
+          # "? versionName for the new App version:" — the version-bump
+          # confirmation. These prompts all have defaults (appVersionName /
+          # appVersionCode from twa-manifest.json), so a blank line accepts the
+          # default. The trap: a *finite* feed (`yes "" | head -n 200`) closes
+          # stdin, and the pipe closing fires inquirer's onForceClose →
+          # `ERR_USE_AFTER_CLOSE: readline was closed` → instant crash, even
+          # though the blanks were correct. So feed an ENDLESS `yes ""`: stdin
+          # never closes, every prompt gets its default, and when bubblewrap
+          # exits `yes` dies on SIGPIPE. The old multi-GB flood can't recur now
+          # that licenses are pre-accepted (no reprompt loop); `tail` still caps
+          # captured output and `timeout` is the final backstop against a hang.
+          timeout 1200 bash -c 'yes "" | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
           test -f app-release-signed.apk
 
       - name: Collect APK
