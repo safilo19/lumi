@@ -118,7 +118,13 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Capture hub `/new` (not committed): one page to create a note by
+- 2026-10-11 — Scan fixes + camera scanner (not committed): `generateNoteFromMedia`
+  now tries a Gemini vision model chain and parses tolerantly (fixes the "could
+  not read those pages" error); `/api/scan` returns a `detail` with the real
+  error. New `components/app/doc-scanner.tsx`: in-app camera with an alignment
+  frame, multi-page capture, grayscale/contrast enhance, review strip. `/new`
+  scan opens it (fallback: multi-select photo upload; `capture` removed).
+- 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
   Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
   or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`
   (Gemini vision/doc → note, via `generateNoteFromMedia` in `llm.ts`) and

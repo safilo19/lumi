@@ -11,6 +11,7 @@ import {
   FilePdfIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { DocScanner } from "@/components/app/doc-scanner";
 import { createNote } from "@/lib/local/notes";
 import { useCourses } from "@/lib/local/use-courses";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ export default function NewPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [text, setText] = useState("");
+  const [scanning, setScanning] = useState(false);
   const audioRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
@@ -129,31 +131,65 @@ export default function NewPage() {
     });
   }
 
-  function onScan(e: ChangeEvent<HTMLInputElement>, kind: "photo" | "pdf") {
-    const list = e.target.files ? Array.from(e.target.files) : [];
-    e.target.value = "";
-    if (!list.length) return;
-    void run(kind, async () => {
-      const files = await Promise.all(
-        list.map((f) =>
-          f.type === "application/pdf"
-            ? fileToBase64(f).then((data) => ({ data, mimeType: "application/pdf" }))
-            : downscale(f),
-        ),
-      );
+  function doScan(
+    label: string,
+    getFiles: () => Promise<{ data: string; mimeType: string }[]>,
+  ) {
+    void run(label, async () => {
+      const files = await getFiles();
+      if (!files.length) throw new Error("No pages to scan.");
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed.");
+      if (!res.ok) {
+        throw new Error(
+          data.detail ? `${data.error} (${data.detail})` : data.error || "Failed.",
+        );
+      }
       await save(data.note);
     });
   }
 
+  function filesFromInput(list: File[]) {
+    return Promise.all(
+      list.map((f) =>
+        f.type === "application/pdf"
+          ? fileToBase64(f).then((data) => ({ data, mimeType: "application/pdf" }))
+          : downscale(f),
+      ),
+    );
+  }
+
+  function onScanInput(e: ChangeEvent<HTMLInputElement>, kind: "photo" | "pdf") {
+    const list = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = "";
+    if (!list.length) return;
+    doScan(kind, () => filesFromInput(list));
+  }
+
+  function startScan() {
+    if (typeof navigator !== "undefined" && navigator.mediaDevices) {
+      setScanning(true);
+    } else {
+      photoRef.current?.click();
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-2xl">
+    <>
+      {scanning ? (
+        <DocScanner
+          onDone={(files) => {
+            setScanning(false);
+            doScan("photo", async () => files);
+          }}
+          onCancel={() => setScanning(false)}
+        />
+      ) : null}
+      <div className="mx-auto max-w-2xl">
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
@@ -193,10 +229,18 @@ export default function NewPage() {
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <ActionCard Icon={PencilSimpleLineIcon} tint="bg-accent-weak text-accent" title="Write a note" sub="Start blank and type it yourself" onClick={writeNote} busy={busy === "write"} />
-        <ActionCard Icon={CameraIcon} tint="bg-lime-weak text-lime-ink" title="Scan notes" sub="Photograph handwritten or printed notes" onClick={() => photoRef.current?.click()} busy={busy === "photo"} />
+        <ActionCard Icon={CameraIcon} tint="bg-lime-weak text-lime-ink" title="Scan notes" sub="Camera scanner — capture multiple pages" onClick={startScan} busy={busy === "photo"} />
         <ActionCard Icon={FilePdfIcon} tint="bg-coral-weak text-coral-weak-ink" title="Import PDF or slides" sub="Turn a PDF or slide deck into notes" onClick={() => pdfRef.current?.click()} busy={busy === "pdf"} />
         <ActionCard Icon={UploadSimpleIcon} tint="bg-accent-weak text-accent" title="Upload audio" sub="Transcribe a recording from your device" onClick={() => audioRef.current?.click()} busy={busy === "audio"} />
       </div>
+
+      <button
+        type="button"
+        onClick={() => photoRef.current?.click()}
+        className="mt-3 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+      >
+        or upload photos of your notes
+      </button>
 
       <div className="mt-6 rounded-[var(--radius-card)] border-2 border-line bg-surface p-4">
         <div className="mb-2 flex items-center gap-2 font-display text-sm font-bold text-ink">
@@ -215,10 +259,11 @@ export default function NewPage() {
         </Button>
       </div>
 
-      <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple onChange={(e) => onScan(e, "photo")} className="hidden" />
-      <input ref={pdfRef} type="file" accept="application/pdf" onChange={(e) => onScan(e, "pdf")} className="hidden" />
+      <input ref={photoRef} type="file" accept="image/*" multiple onChange={(e) => onScanInput(e, "photo")} className="hidden" />
+      <input ref={pdfRef} type="file" accept="application/pdf" onChange={(e) => onScanInput(e, "pdf")} className="hidden" />
       <input ref={audioRef} type="file" accept="audio/*" onChange={onAudio} className="hidden" />
-    </div>
+      </div>
+    </>
   );
 }
 

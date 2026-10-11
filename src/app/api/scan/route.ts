@@ -31,11 +31,16 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof AllProvidersFailedError) {
       const noKey = err.attempts.every((a) => a.error === "no api key");
+      const detail = err.attempts
+        .map((a) => a.error)
+        .filter(Boolean)
+        .slice(-1)[0];
       return NextResponse.json(
         {
           error: noKey
             ? "Scanning needs the Gemini key configured on the server."
             : "Could not read those pages. Try clearer photos or fewer pages.",
+          detail,
         },
         { status: 502 },
       );

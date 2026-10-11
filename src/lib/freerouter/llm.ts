@@ -273,69 +273,68 @@ export async function generateNote(transcript: string): Promise<NoteResult> {
   throw new AllProvidersFailedError("note generation", attempts);
 }
 
-/**
- * Turn scanned images or PDF pages (a student's handwritten/printed notes or
- * lecture slides) into a Lumi note, using Gemini's vision/document reading.
- * `files` are base64 payloads with their mime type.
- */
+// Gemini vision model ids are version-churny; try a few so a retired default
+// doesn't break scanning outright.
+const VISION_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-1.5-flash",
+];
+
 export async function generateNoteFromMedia(
   files: { data: string; mimeType: string }[],
 ): Promise<NoteResult> {
-  const model = "gemini-2.0-flash";
   const key = keyFor("gemini");
   const attempts: Attempt[] = [];
   if (!key) {
-    attempts.push({ provider: "gemini", model, ok: false, ms: 0, error: "no api key" });
+    attempts.push({ provider: "gemini", model: "gemini", ok: false, ms: 0, error: "no api key" });
     throw new AllProvidersFailedError("scan", attempts);
   }
-  const started = Date.now();
-  try {
-    const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: NOTE_SYSTEM_PROMPT }] },
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: "These images or PDF pages are a student's handwritten or printed notes, or lecture slides. Read ALL of them carefully and produce the Lumi notes JSON in English.",
-              },
-              ...files.map((f) => ({
-                inlineData: { mimeType: f.mimeType, data: f.data },
-              })),
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: TEMPERATURE,
-          maxOutputTokens: MAX_TOKENS,
+  // Keep the JSON instruction in the user turn (not systemInstruction) and parse
+  // tolerantly — more reliable with image input than forcing responseMimeType.
+  const parts = [
+    {
+      text: `${NOTE_SYSTEM_PROMPT}\n\nThe following images or PDF pages are a student's handwritten or printed notes, or lecture slides. Read ALL of them and output ONLY the notes JSON described above, in English.`,
+    },
+    ...files.map((f) => ({ inlineData: { mimeType: f.mimeType, data: f.data } })),
+  ];
+  for (const model of VISION_MODELS) {
+    const started = Date.now();
+    try {
+      const res = await fetch(
+        `${GEMINI_BASE}/${model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts }],
+            generationConfig: { temperature: TEMPERATURE, maxOutputTokens: MAX_TOKENS },
+          }),
         },
-      }),
-    });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 180)}`);
+      );
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts
+        ?.map((p: { text?: string }) => p.text ?? "")
+        .join("");
+      if (!text) throw new Error("empty response");
+      const note = sanitizeNote(text);
+      attempts.push({ provider: "gemini", model, ok: true, ms: Date.now() - started });
+      return { ...note, attempts, provider: "gemini", model };
+    } catch (err) {
+      attempts.push({
+        provider: "gemini",
+        model,
+        ok: false,
+        ms: Date.now() - started,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts
-      ?.map((p: { text?: string }) => p.text ?? "")
-      .join("");
-    if (!text) throw new Error("empty response");
-    const note = sanitizeNote(text);
-    attempts.push({ provider: "gemini", model, ok: true, ms: Date.now() - started });
-    return { ...note, attempts, provider: "gemini", model };
-  } catch (err) {
-    attempts.push({
-      provider: "gemini",
-      model,
-      ok: false,
-      ms: Date.now() - started,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw new AllProvidersFailedError("scan", attempts);
   }
+  throw new AllProvidersFailedError("scan", attempts);
 }
 
 /**
