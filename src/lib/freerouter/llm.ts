@@ -16,7 +16,9 @@ import {
 } from "./types";
 
 const TEMPERATURE = 0.3;
-const MAX_TOKENS = 4096;
+// Notes are meant to be exhaustive, so allow a long completion. Providers that
+// cap lower will simply return their max; the tolerant JSON parse handles it.
+const MAX_TOKENS = 8192;
 
 // --- provider adapters: each returns the raw model text (expected to be JSON) ---
 

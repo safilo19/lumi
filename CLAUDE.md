@@ -120,6 +120,11 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Exhaustive notes: rewrote `NOTE_SYSTEM_PROMPT` so notes cover EVERY
+  detail (treat them as the student's only study material) — no block cap (30-60+),
+  full paragraphs + every worked example, a visual per structured section, glossary
+  of all terms; raised `MAX_TOKENS` 4096→8192. Live test: a short transcript → 47 blocks.
+
 - 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic; all 8
   tools). A: Fraunces serif, editorial CSS (`.note-dropcap`/`.editorial-rule`/
   `.note-aurora`/`.reader-serif`), `note-masthead.tsx`, `reading-progress.tsx`,
@@ -193,9 +198,6 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   Build (clean), lint, tsc green.
 - 2026-10-11 — Media + AI visuals (`image`/`illustration` blocks; editor "Add with
   AI and media" → `/api/visual` + `/api/photo`; `FigureFrame` fullscreen; `blocksToText`).
-- 2026-10-11 — First-run tour (`first-run-tour.tsx`, `motion`, `localStorage` lumi-tour-done).
 - 2026-10-11 — Export overhaul: `ExportDialog` PDF(print)/PNG(`html-to-image`)/docx + paper
   styles via `[data-paper]`; `.lumi-mark` highlighter; `NoteToolbar` Edit + Export.
-- 2026-10-10 — Local-first conversion (commit `1d004cb`, pushed): removed auth +
-  Postgres (`src/lib/auth`, `src/lib/db`, `/api/auth/*`); notes in IndexedDB.
   tsc green.
