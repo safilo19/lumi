@@ -7,7 +7,6 @@ import {
   ArrowRightIcon,
   CardsThreeIcon,
   ExamIcon,
-  ChatCircleDotsIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
@@ -57,7 +56,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-3 gap-3">
+      <section className="mt-6 grid grid-cols-2 gap-3">
         <ToolLink
           href="/review"
           Icon={CardsThreeIcon}
@@ -69,12 +68,6 @@ export default function DashboardPage() {
           Icon={ExamIcon}
           label="Quiz me"
           tint="bg-coral-weak text-coral-weak-ink"
-        />
-        <ToolLink
-          href="/ask"
-          Icon={ChatCircleDotsIcon}
-          label="Ask notes"
-          tint="bg-accent-weak text-accent-weak-ink"
         />
       </section>
 

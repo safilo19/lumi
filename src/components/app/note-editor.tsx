@@ -239,7 +239,7 @@ export function NoteEditor({
           {error}
         </div>
       ) : null}
-      <div className="flex flex-col gap-5 font-hand text-[1.35rem] leading-relaxed text-ink">
+      <div className="flex flex-col gap-5 text-[1.0625rem] leading-relaxed text-ink">
         {blocks.map((block, i) => (
           <BlockRow
             key={i}
@@ -383,7 +383,7 @@ function EditBlock({
             value={block.text}
             onCommit={(t) => onPatch({ ...block, text: t })}
             placeholder="The big idea..."
-            className="text-[1.6rem] font-bold leading-snug text-accent-weak-ink"
+            className="text-lg font-bold leading-relaxed text-accent-weak-ink"
           />
         </div>
       );
@@ -393,7 +393,7 @@ function EditBlock({
           value={block.text}
           onCommit={(t) => onPatch({ ...block, text: t })}
           placeholder="Section heading"
-          className="inline-block border-b-4 border-lime-deep/50 pb-0.5 text-3xl font-bold text-ink"
+          className="inline-block border-b-4 border-lime-deep/50 pb-0.5 font-hand text-3xl font-bold text-ink"
         />
       );
     case "paragraph":

@@ -48,14 +48,14 @@ export function NotePreview({ className }: { className?: string }) {
         </div>
 
         {/* key points */}
-        <ul className="space-y-2.5 font-hand text-[1.05rem] leading-relaxed text-ink">
+        <ul className="space-y-2.5 text-[14px] font-semibold leading-relaxed text-ink">
           {[
             "Round Robin gives each process a fixed time quantum.",
             "Shortest Job First minimises average waiting time.",
             "Starvation happens when low-priority jobs never run.",
           ].map((point) => (
             <li key={point} className="flex gap-2.5">
-              <span className="mt-[9px] h-2 w-2 shrink-0 rounded-full bg-lime-deep" />
+              <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-lime-deep" />
               {point}
             </li>
           ))}

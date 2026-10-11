@@ -35,11 +35,15 @@ export const STT_CHAIN: {
   { provider: "groq", model: "whisper-large-v3-turbo", mode: "transcribe" },
 ];
 
+// LLM chain for notes / quiz / ask, tried in order across providers. Model ids
+// drift as providers retire versions — if calls 404, update these to the
+// current free ids (Groq /models, OpenRouter models list, Gemini models list).
 export const NOTE_CHAIN: { provider: Provider; model: string }[] = [
-  { provider: "gemini", model: "gemini-flash-latest" },
+  { provider: "gemini", model: "gemini-2.0-flash" },
+  { provider: "groq", model: "llama-3.3-70b-versatile" },
   { provider: "groq", model: "openai/gpt-oss-120b" },
-  { provider: "openrouter", model: "google/gemma-4-31b-it:free" },
-  { provider: "openrouter", model: "nvidia/nemotron-3-super-120b-a12b:free" },
+  { provider: "openrouter", model: "google/gemma-2-9b-it:free" },
+  { provider: "openrouter", model: "meta-llama/llama-3.1-8b-instruct:free" },
 ];
 
 // OpenAI-compatible base URLs (Groq and OpenRouter both speak this dialect).

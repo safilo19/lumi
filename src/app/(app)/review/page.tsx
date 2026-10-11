@@ -91,7 +91,7 @@ export default function ReviewPage() {
             <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">
               {revealed ? "Answer" : "Question"}
             </p>
-            <p className="mt-3 font-hand text-2xl leading-snug text-ink">
+            <p className="mt-3 text-2xl font-semibold leading-snug text-ink">
               {revealed ? current.back : current.front}
             </p>
           </div>

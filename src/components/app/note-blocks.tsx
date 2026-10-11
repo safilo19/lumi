@@ -1,5 +1,11 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import {
+  useRef,
+  useState,
+  type PointerEvent,
+  type ReactNode,
+  type WheelEvent,
+} from "react";
 import {
   SparkleIcon,
   FunctionIcon,
@@ -13,6 +19,10 @@ import {
   CaretDownIcon,
   DiamondIcon,
   ArrowsOutIcon,
+  PlusIcon,
+  MinusIcon,
+  XIcon,
+  ArrowCounterClockwiseIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import katex from "katex";
 import { type NoteBlock } from "@/lib/mock-data";
@@ -86,7 +96,7 @@ const flowStyles = {
 
 export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
   return (
-    <div className="flex flex-col gap-6 font-hand text-[1.35rem] leading-relaxed text-ink">
+    <div className="flex flex-col gap-6 text-[1.0625rem] leading-relaxed text-ink">
       {blocks.map((block, i) => (
         <Block key={i} block={block} />
       ))}
@@ -103,14 +113,14 @@ export function Block({ block }: { block: NoteBlock }) {
             <SparkleIcon size={16} weight="fill" />
             The big idea
           </div>
-          <p className="mt-2 text-[1.7rem] font-bold leading-snug text-accent-weak-ink">
+          <p className="mt-2 text-lg font-bold leading-relaxed text-accent-weak-ink">
             {block.text}
           </p>
         </section>
       );
     case "heading":
       return (
-        <h2 className="mt-2 inline-block border-b-4 border-lime-deep/50 pb-0.5 text-3xl font-bold text-ink">
+        <h2 className="mt-2 inline-block border-b-4 border-lime-deep/50 pb-0.5 font-hand text-3xl font-bold text-ink">
           {block.text}
         </h2>
       );
@@ -329,11 +339,29 @@ function FigureFrame({
   children: ReactNode;
 }) {
   const [zoom, setZoom] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number } | null>(null);
+
+  function open() {
+    setScale(1);
+    setPos({ x: 0, y: 0 });
+    setZoom(true);
+  }
+  function onPointerDown(e: PointerEvent) {
+    drag.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e: PointerEvent) {
+    if (drag.current)
+      setPos({ x: e.clientX - drag.current.x, y: e.clientY - drag.current.y });
+  }
+
   return (
     <figure className="relative rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
       <button
         type="button"
-        onClick={() => setZoom(true)}
+        onClick={open}
         aria-label="Expand"
         className="no-print absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-line-strong bg-surface/90 text-ink-soft backdrop-blur transition-colors hover:text-ink"
       >
@@ -346,18 +374,76 @@ function FigureFrame({
         </figcaption>
       ) : null}
       {zoom ? (
-        <div
-          className="no-print fixed inset-0 z-[95] flex items-center justify-center bg-ink/70 p-4"
-          onClick={() => setZoom(false)}
-        >
+        <div className="no-print fixed inset-0 z-[95] flex flex-col bg-ink/80">
+          <div className="flex items-center justify-between gap-2 p-3">
+            <span className="font-display text-sm font-bold text-paper">
+              {caption || "Diagram"}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <ZoomBtn label="Zoom out" onClick={() => setScale((s) => Math.max(0.4, s - 0.2))}>
+                <MinusIcon size={16} weight="bold" />
+              </ZoomBtn>
+              <ZoomBtn
+                label="Reset"
+                onClick={() => {
+                  setScale(1);
+                  setPos({ x: 0, y: 0 });
+                }}
+              >
+                <ArrowCounterClockwiseIcon size={16} weight="bold" />
+              </ZoomBtn>
+              <ZoomBtn label="Zoom in" onClick={() => setScale((s) => Math.min(3, s + 0.2))}>
+                <PlusIcon size={16} weight="bold" />
+              </ZoomBtn>
+              <ZoomBtn label="Close" onClick={() => setZoom(false)}>
+                <XIcon size={16} weight="bold" />
+              </ZoomBtn>
+            </div>
+          </div>
           <div
-            className="max-h-full w-full max-w-4xl overflow-auto rounded-[var(--radius-card)] border-2 border-line-strong bg-surface p-6"
-            onClick={(e) => e.stopPropagation()}
+            className="flex-1 cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={() => (drag.current = null)}
+            onWheel={(e: WheelEvent) =>
+              setScale((s) => Math.min(3, Math.max(0.4, s - e.deltaY * 0.0015)))
+            }
           >
-            {children}
+            <div
+              className="mx-auto max-w-3xl p-6"
+              style={{
+                transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+                transformOrigin: "center top",
+              }}
+            >
+              <div className="rounded-[var(--radius-card)] bg-surface p-6">
+                {children}
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
     </figure>
+  );
+}
+
+function ZoomBtn({
+  children,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-paper/40 bg-ink/40 text-paper transition-colors hover:bg-ink/70"
+    >
+      {children}
+    </button>
   );
 }

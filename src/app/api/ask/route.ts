@@ -26,7 +26,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ answer: answer || "I could not find that in your notes." });
   } catch (err) {
     if (err instanceof AllProvidersFailedError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+      const noKeys = err.attempts.every((a) => a.error === "no api key");
+      return NextResponse.json(
+        {
+          error: noKeys
+            ? "The AI service isn't configured yet. Add GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY to the server environment."
+            : "Every AI provider is busy or unavailable right now. Please try again in a moment.",
+        },
+        { status: 502 },
+      );
     }
     return NextResponse.json({ error: "Could not answer right now." }, { status: 500 });
   }

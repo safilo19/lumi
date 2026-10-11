@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { NoteBlocks } from "@/components/app/note-blocks";
 import { NoteArt } from "@/components/app/note-art";
+import { AskNote } from "@/components/app/ask-note";
 import { NoteToolbar } from "@/components/app/note-toolbar";
 import { useNote } from "@/lib/local/use-notes";
 import { courseById } from "@/lib/mock-data";
@@ -90,6 +91,8 @@ export default function NotePage({
       <hr className="my-8 border-line" />
 
       <NoteBlocks blocks={note.blocks} />
+
+      <AskNote note={note} />
     </div>
   );
 }

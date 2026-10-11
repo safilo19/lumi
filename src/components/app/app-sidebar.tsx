@@ -10,7 +10,6 @@ import {
   GearSixIcon,
   CardsThreeIcon,
   ExamIcon,
-  ChatCircleDotsIcon,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
 import { courses } from "@/lib/mock-data";
@@ -21,7 +20,6 @@ const nav = [
   { href: "/record", label: "New recording", icon: MicrophoneIcon },
   { href: "/review", label: "Review", icon: CardsThreeIcon },
   { href: "/quiz", label: "Quiz me", icon: ExamIcon },
-  { href: "/ask", label: "Ask your notes", icon: ChatCircleDotsIcon },
 ];
 
 export function AppSidebar() {

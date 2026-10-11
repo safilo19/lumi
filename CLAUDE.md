@@ -57,8 +57,9 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 - `src/app/(app)/` — route group (does NOT affect URLs). The app:
   `/` dashboard, `/courses`, `/courses/[id]`, `/library`, `/notes/[id]`,
-  `/notes/[id]/edit`, `/record`, `/review` (flashcards), `/quiz`, `/ask`
-  (ask-your-notes), `/search`, `/settings`.
+  `/notes/[id]/edit`, `/record`, `/review` (flashcards), `/quiz`, `/search`,
+  `/settings`. Ask-your-notes is embedded per-note (`components/app/ask-note.tsx`
+  on the note view), not a separate route.
 - `src/app/about/` — marketing landing (`/about`): SiteNav, Hero, HowItWorks,
   Features, FreeForever, ClosingCta, SiteFooter.
 - `src/app/api/notes/create/` — server-side AI note generation (keys stay
@@ -111,7 +112,14 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Inline WYSIWYG note editor (not committed): `note-editor.tsx`
+- 2026-10-11 — Font/ask/diagram pass (not committed): handwriting (Caveat) now
+  only on headings + titles; note body reverted to clean sans. Ask-your-notes is
+  embedded in every note (`ask-note.tsx`), standalone `/ask` route + nav removed;
+  `/api/ask` gives a clear "AI not configured" message when keys are missing, and
+  `NOTE_CHAIN` model ids updated to standard free ids (needs real keys in the
+  deploy env). Diagrams/flowcharts/mindmaps gained pan + zoom in the fullscreen
+  view (`FigureFrame`). Build (clean), lint, tsc green.
+- 2026-10-11 — Inline WYSIWYG note editor (committed `8dbd7b4`, pushed): `note-editor.tsx`
   rewritten so the note is edited in place as it looks — text is editable via an
   uncontrolled contentEditable `Editable` (commits on blur, no caret jumps), each
   block has hover move/delete controls, visuals render read-only via the exported
