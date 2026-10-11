@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { FirstRunTour } from "@/components/app/first-run-tour";
+import { Overlays } from "@/components/app/overlays";
 
 export default function AppLayout({
   children,
@@ -19,6 +20,7 @@ export default function AppLayout({
       </div>
       <BottomNav />
       <FirstRunTour />
+      <Overlays />
     </div>
   );
 }

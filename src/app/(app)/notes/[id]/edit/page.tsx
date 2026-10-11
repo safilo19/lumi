@@ -3,7 +3,7 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import { NoteEditor } from "@/components/app/note-editor";
 import { useNote } from "@/lib/local/use-notes";
-import { courseById } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 
 export default function EditNotePage({
   params,
@@ -12,6 +12,7 @@ export default function EditNotePage({
 }) {
   const { id } = use(params);
   const { data: note, loading } = useNote(id);
+  const { data: courses } = useCourses();
 
   if (loading) {
     return (
@@ -22,7 +23,7 @@ export default function EditNotePage({
   }
   if (!note) notFound();
 
-  const course = courseById(note.courseId);
+  const course = courses.find((c) => c.id === note.courseId);
 
   return (
     <NoteEditor

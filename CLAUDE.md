@@ -76,13 +76,17 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   (spaced repetition) + `quiz.ts` (type). `src/lib/notes/text.ts` —
   `noteToPlainText` (AI context + search haystack).
 - `src/app/api/mcp/` — MCP server endpoint.
-- `src/lib/local/` — IndexedDB store (`notes.ts`) + loader hooks
-  (`use-notes.ts`: `useNotes`, `useCourseNotes`, `useNote`, `useNoteCounts`).
+- `src/lib/local/` — IndexedDB store (DB `lumi`, v3; stores: `notes`, `meta`,
+  `cards`, `courses`). `notes.ts` (incl. `deleteNote`/`restoreNote`),
+  `courses.ts` (user-created courses, no defaults), loader hooks `use-notes.ts`
+  + `use-courses.ts` (`useCourses` + `addCourse`/`removeCourse`, shared cache).
 - `src/lib/freerouter/` — AI pipeline / provider failover.
-- `src/lib/mock-data.ts` — the `Note` type + `NoteBlock` union (summary,
-  heading, paragraph, bullets, keyterm, callout, glossary, formula, diagram,
-  flowchart, mindmap) + `courses`. `src/lib/freerouter/types.ts` MUST mirror
-  `NoteBlock` exactly. Renderer: `components/app/note-blocks.tsx`.
+- `src/lib/mock-data.ts` — TYPES ONLY now (`Note`, `NoteBlock` union, `Course`);
+  no data. `src/lib/freerouter/types.ts` MUST mirror `NoteBlock`. Renderer:
+  `components/app/note-blocks.tsx`.
+- `src/components/app/overlays.tsx` — global `confirmAction()` (delete
+  confirmation modal) + `showUndo()` (undo snackbar); `<Overlays/>` mounts in
+  `(app)/layout.tsx`. Use these for any destructive action.
 - `src/components/` — `marketing/`, `app/` (sidebar, note-editor), `ui/`,
   `brand/`, plus `note-preview.tsx` (live sample note: hero + in-app card).
 - `scripts/gen-sw.mjs` — service-worker generator (predev/prebuild).
@@ -114,6 +118,16 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — User courses + delete/undo (not committed): removed the 3
+  hardcoded default courses; courses are now student-created in IndexedDB
+  (`courses` store, DB v3) via `/courses` (create form + delete). Delete-with-
+  confirm-and-undo for notes (note toolbar) and courses via `overlays.tsx`
+  (`confirmAction` + `showUndo`). Moved the per-note "Ask this note" panel to the
+  top. `mock-data.ts` is types-only; all course lookups use `useCourses`.
+- 2026-10-11 — Android APK fixed (pushed `c67ffd9`): TWA build was failing on
+  minSdk 21 vs androidbrowserhelper's required 24 → bumped `twa-manifest.json`
+  minSdk to 24; rebuilt via GH Actions and replaced the stale `lumi.apk` on the
+  v0.1.10 release.
 - 2026-10-11 — PWA service worker hardening (`scripts/gen-sw.mjs`): navigation
   fetch is now network-first with a 4s AbortController timeout so a stalled
   launch request can't hang the installed app on a white screen; offline page
@@ -171,21 +185,6 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   `globals.css`; PNG via `html-to-image`; `.docx` via `src/lib/export/docx.ts`
   (`docx`). Added `.lumi-mark` highlighter on key terms. `NoteToolbar` now takes
   `note` and shows Edit + Export (dropped the Share stub). Build, lint, tsc green.
-- 2026-10-11 — Notes redesign (Phase 2 of the overhaul; not committed):
-  expanded `NoteBlock` with `keyterm`, `callout` (tip/important/example/
-  warning), `glossary`, `flowchart`, `mindmap` (mirrored in `types.ts`);
-  rewrote `NOTE_SYSTEM_PROMPT` for the branded Lumi format + LaTeX; extended
-  `llm.ts` sanitizer. Rebuilt `note-blocks.tsx` (branded render + KaTeX +
-  custom SVG-ish flowchart/mindmap) and `note-editor.tsx` (editors for all new
-  kinds). Added `katex` + Patrick Hand handwriting font applied to note
-  content. Build, lint, tsc green.
-- 2026-10-11 — English-only pipeline + empty library (Phase 1 of a notes
-  overhaul; not committed): STT now translates to English via Groq
-  `/audio/translations` (whisper-large-v3), falling back to verbatim
-  transcription — `STT_CHAIN` gained a `mode` (`config.ts`, `stt.ts`); note
-  prompt forces English output (`prompt.ts`). Removed sample-note seeding so
-  fresh installs start empty (`src/lib/local/notes.ts`, dropped `ensureSeeded`);
-  added a `/library` empty state. Build, lint, tsc green.
 - 2026-10-10 — Local-first conversion (commit `1d004cb`, pushed to `main`):
   removed all auth + the Postgres data layer (`src/lib/auth`, `src/lib/db`,
   `src/proxy.ts`, login/signup, `/api/auth/*`, `PATCH /api/notes/[id]`,

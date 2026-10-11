@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       note: {
         title: note.title,
-        courseId: courseId ?? "cs2033",
+        courseId: courseId ?? "",
         language: normalizeLanguage(note.language),
         blocks: note.blocks,
         durationMin: Number.isFinite(durationSec)

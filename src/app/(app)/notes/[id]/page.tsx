@@ -13,7 +13,7 @@ import { NoteArt } from "@/components/app/note-art";
 import { AskNote } from "@/components/app/ask-note";
 import { NoteToolbar } from "@/components/app/note-toolbar";
 import { useNote } from "@/lib/local/use-notes";
-import { courseById } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 
 export default function NotePage({
   params,
@@ -22,6 +22,7 @@ export default function NotePage({
 }) {
   const { id } = use(params);
   const { data: note, loading } = useNote(id);
+  const { data: courses } = useCourses();
 
   if (loading) {
     return (
@@ -32,7 +33,7 @@ export default function NotePage({
   }
   if (!note) notFound();
 
-  const course = courseById(note.courseId);
+  const course = courses.find((c) => c.id === note.courseId);
 
   return (
     <div id="note-print-area" className="mx-auto max-w-3xl">
@@ -88,11 +89,11 @@ export default function NotePage({
         <NoteToolbar note={note} />
       </div>
 
+      <AskNote note={note} />
+
       <hr className="my-8 border-line" />
 
       <NoteBlocks blocks={note.blocks} />
-
-      <AskNote note={note} />
     </div>
   );
 }

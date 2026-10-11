@@ -7,10 +7,11 @@
 import { type Note, type NoteBlock } from "@/lib/mock-data";
 
 const DB_NAME = "lumi";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const NOTES = "notes";
 const META = "meta";
 export const CARDS = "cards";
+export const COURSES = "courses";
 
 function byRecencyDesc(a: Note, b: Note) {
   return +new Date(b.recordedAt) - +new Date(a.recordedAt);
@@ -47,6 +48,7 @@ export function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(NOTES)) db.createObjectStore(NOTES, { keyPath: "id" });
       if (!db.objectStoreNames.contains(META)) db.createObjectStore(META, { keyPath: "key" });
       if (!db.objectStoreNames.contains(CARDS)) db.createObjectStore(CARDS, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(COURSES)) db.createObjectStore(COURSES, { keyPath: "id" });
     };
     open.onsuccess = () => resolve(open.result);
     open.onerror = () => reject(open.error);
@@ -172,5 +174,24 @@ export async function clearAllNotes(): Promise<void> {
   const db = await ready();
   const tx = db.transaction(NOTES, "readwrite");
   tx.objectStore(NOTES).clear();
+  await txDone(tx);
+}
+
+// Delete a note, returning it so the caller can offer an undo (re-insert via
+// restoreNote preserves the exact id, dates and content).
+export async function deleteNote(id: string): Promise<Note | undefined> {
+  const db = await ready();
+  const existing = await getNote(id);
+  if (!existing) return undefined;
+  const tx = db.transaction(NOTES, "readwrite");
+  tx.objectStore(NOTES).delete(id);
+  await txDone(tx);
+  return existing;
+}
+
+export async function restoreNote(note: Note): Promise<void> {
+  const db = await ready();
+  const tx = db.transaction(NOTES, "readwrite");
+  tx.objectStore(NOTES).put(note);
   await txDone(tx);
 }

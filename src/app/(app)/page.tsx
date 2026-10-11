@@ -10,8 +10,8 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
-import { courses } from "@/lib/mock-data";
 import { useNotes } from "@/lib/local/use-notes";
+import { useCourses } from "@/lib/local/use-courses";
 import { cn } from "@/lib/utils";
 
 const courseTints = [
@@ -22,6 +22,7 @@ const courseTints = [
 
 export default function DashboardPage() {
   const { data: recent } = useNotes();
+  const { data: courses } = useCourses();
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -90,39 +91,56 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-display text-lg font-semibold text-ink">
-          Your courses
-        </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course, i) => {
-            const count = recent.filter((n) => n.courseId === course.id).length;
-            return (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="group rounded-[var(--radius-card)] border-2 border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-1 hover:border-accent hover:shadow-[var(--shadow-pop)]"
-              >
-                <span
-                  className={`inline-block rounded-full px-3 py-1 font-mono text-xs font-semibold ${courseTints[i % courseTints.length]}`}
-                >
-                  {course.code}
-                </span>
-                <div className="mt-3 font-display text-lg font-semibold tracking-tight text-ink group-hover:text-accent">
-                  {course.name}
-                </div>
-                <div className="mt-2 flex items-center gap-1.5 text-sm font-bold text-ink-soft">
-                  {count} {count === 1 ? "note" : "notes"} ·{" "}
-                  {course.folders.length} folders
-                  <ArrowRightIcon
-                    size={15}
-                    weight="bold"
-                    className="ml-auto text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
-                  />
-                </div>
-              </Link>
-            );
-          })}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Your courses
+          </h2>
+          <Link
+            href="/courses"
+            className="text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+          >
+            Manage
+          </Link>
         </div>
+        {courses.length === 0 ? (
+          <Link
+            href="/courses"
+            className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border-2 border-dashed border-line-strong p-8 text-center font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent"
+          >
+            <PlusIcon size={24} weight="bold" />
+            <span className="text-sm">Create your first course</span>
+          </Link>
+        ) : (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course, i) => {
+              const count = recent.filter((n) => n.courseId === course.id).length;
+              return (
+                <Link
+                  key={course.id}
+                  href={`/courses/${course.id}`}
+                  className="group rounded-[var(--radius-card)] border-2 border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-1 hover:border-accent hover:shadow-[var(--shadow-pop)]"
+                >
+                  <span
+                    className={`inline-block rounded-full px-3 py-1 font-mono text-xs font-semibold ${courseTints[i % courseTints.length]}`}
+                  >
+                    {course.code}
+                  </span>
+                  <div className="mt-3 font-display text-lg font-semibold tracking-tight text-ink group-hover:text-accent">
+                    {course.name}
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-sm font-bold text-ink-soft">
+                    {count} {count === 1 ? "note" : "notes"}
+                    <ArrowRightIcon
+                      size={15}
+                      weight="bold"
+                      className="ml-auto text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+                    />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
     </div>
   );

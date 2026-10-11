@@ -12,7 +12,7 @@ import {
   ExamIcon,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
-import { courses } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -24,6 +24,7 @@ const nav = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { data: courses } = useCourses();
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r-2 border-line bg-surface/50 lg:flex">

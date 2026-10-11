@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeftIcon, MicrophoneIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
-import { courseById } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 import { useCourseNotes } from "@/lib/local/use-notes";
 
 export default function CoursePage({
@@ -14,8 +14,16 @@ export default function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const course = courseById(id);
+  const { data: courses, loading } = useCourses();
   const { data: courseNotes } = useCourseNotes(id);
+  const course = courses.find((c) => c.id === id);
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-5xl py-16 text-center text-ink-soft">
+        Loading…
+      </div>
+    );
+  }
   if (!course) notFound();
 
   return (

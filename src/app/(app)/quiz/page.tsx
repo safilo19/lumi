@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon, ExamIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { courses } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 import { getNote, listNotesForCourse } from "@/lib/local/notes";
 import { noteToPlainText } from "@/lib/notes/text";
 import type { QuizQuestion } from "@/lib/study/quiz";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 type Phase = "setup" | "loading" | "playing" | "done";
 
 export default function QuizPage() {
+  const { data: courses } = useCourses();
   const [phase, setPhase] = useState<Phase>("setup");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [idx, setIdx] = useState(0);
@@ -101,22 +102,34 @@ export default function QuizPage() {
 
       {phase === "setup" ? (
         <div className="mt-6">
-          <p className="text-ink-soft">
-            Pick a course and Lumi writes a quiz from its notes.
-          </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {courses.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => quizCourse(c.id)}
-                className="rounded-[var(--radius-card)] border-2 border-line-strong bg-surface p-4 text-left transition-colors hover:border-accent"
-              >
-                <span className="font-display font-bold text-ink">{c.code}</span>
-                <span className="mt-0.5 block text-sm text-ink-soft">{c.name}</span>
-              </button>
-            ))}
-          </div>
+          {courses.length === 0 ? (
+            <p className="text-ink-soft">
+              You have no courses yet.{" "}
+              <Link href="/courses" className="font-bold text-accent hover:text-accent-hover">
+                Create one
+              </Link>{" "}
+              and record a lecture into it first.
+            </p>
+          ) : (
+            <>
+              <p className="text-ink-soft">
+                Pick a course and Lumi writes a quiz from its notes.
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {courses.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => quizCourse(c.id)}
+                    className="rounded-[var(--radius-card)] border-2 border-line-strong bg-surface p-4 text-left transition-colors hover:border-accent"
+                  >
+                    <span className="font-display font-bold text-ink">{c.code}</span>
+                    <span className="mt-0.5 block text-sm text-ink-soft">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       ) : null}
       {phase === "playing" && questions[idx] ? (

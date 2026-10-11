@@ -1,6 +1,8 @@
+"use client";
 import Link from "next/link";
 import { ClockIcon, TranslateIcon } from "@phosphor-icons/react/dist/ssr";
-import { type Note, courseById } from "@/lib/mock-data";
+import { type Note } from "@/lib/mock-data";
+import { useCourses } from "@/lib/local/use-courses";
 import { cn } from "@/lib/utils";
 
 function formatDate(iso: string) {
@@ -23,7 +25,8 @@ function pillFor(courseId: string) {
 }
 
 export function NoteCard({ note, className }: { note: Note; className?: string }) {
-  const course = courseById(note.courseId);
+  const { data: courses } = useCourses();
+  const course = courses.find((c) => c.id === note.courseId);
   const summary = note.blocks.find((b) => b.kind === "summary");
 
   return (

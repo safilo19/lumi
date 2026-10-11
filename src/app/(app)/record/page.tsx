@@ -15,8 +15,9 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteBlocks } from "@/components/app/note-blocks";
-import { courses, type Note, type NoteBlock } from "@/lib/mock-data";
+import { type Note, type NoteBlock } from "@/lib/mock-data";
 import { createNote } from "@/lib/local/notes";
+import { useCourses } from "@/lib/local/use-courses";
 
 type Phase = "idle" | "recording" | "processing" | "done" | "error";
 
@@ -56,11 +57,13 @@ function pickMime(): { mimeType: string; ext: string } {
 }
 export default function RecordPage() {
   const reduce = useReducedMotion();
+  const { data: courses } = useCourses();
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
-  const [courseId, setCourseId] = useState(courses[0].id);
+  const [courseId, setCourseId] = useState("");
   const [note, setNote] = useState<Note | null>(null);
   const [error, setError] = useState("");
+  const activeCourseId = courseId || courses[0]?.id || "";
 
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -95,7 +98,7 @@ export default function RecordPage() {
       try {
         const form = new FormData();
         form.append("audio", blob, `lecture.${mimeRef.current.ext}`);
-        form.append("courseId", courseId);
+        form.append("courseId", activeCourseId);
         const elapsed = startedAtRef.current
           ? Math.round((Date.now() - startedAtRef.current) / 1000)
           : 0;
@@ -123,7 +126,7 @@ export default function RecordPage() {
         setPhase("error");
       }
     },
-    [courseId],
+    [activeCourseId],
   );
   const start = useCallback(async () => {
     setError("");
@@ -240,17 +243,30 @@ export default function RecordPage() {
           <label className="mb-2 block text-left font-display text-sm font-semibold text-ink-soft">
             Course
           </label>
-          <select
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
-            className="w-full rounded-[var(--radius-input)] border-2 border-line-strong bg-surface px-4 py-3 font-semibold text-ink outline-none focus:border-accent"
-          >
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code} · {c.name}
-              </option>
-            ))}
-          </select>
+          {courses.length === 0 ? (
+            <div className="rounded-[var(--radius-input)] border-2 border-dashed border-line-strong bg-surface px-4 py-3 text-left text-sm text-ink-soft">
+              No courses yet.{" "}
+              <Link
+                href="/courses"
+                className="font-bold text-accent hover:text-accent-hover"
+              >
+                Create one
+              </Link>{" "}
+              to keep this note organised (you can still record without it).
+            </div>
+          ) : (
+            <select
+              value={activeCourseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              className="w-full rounded-[var(--radius-input)] border-2 border-line-strong bg-surface px-4 py-3 font-semibold text-ink outline-none focus:border-accent"
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.code} · {c.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       )}
 
