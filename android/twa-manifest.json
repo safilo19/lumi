@@ -32,6 +32,6 @@
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://APP_HOST_PLACEHOLDER/",
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "fingerprints": []
 }
