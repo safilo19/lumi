@@ -118,12 +118,13 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Scan fixes + camera scanner (not committed): `generateNoteFromMedia`
-  now tries a Gemini vision model chain and parses tolerantly (fixes the "could
-  not read those pages" error); `/api/scan` returns a `detail` with the real
-  error. New `components/app/doc-scanner.tsx`: in-app camera with an alignment
-  frame, multi-page capture, grayscale/contrast enhance, review strip. `/new`
-  scan opens it (fallback: multi-select photo upload; `capture` removed).
+- 2026-10-11 — Premium auto-crop scanner (not committed): `doc-scanner.tsx` now
+  lazy-loads OpenCV.js (`src/lib/scan/opencv.ts`, pinned CDN 4.9.0) to auto-detect
+  page edges — a live lime border locks on, and capture perspective-crops +
+  CLAHE-cleans the page to a flat "scanned" image. Degrades to a plain enhanced
+  photo if OpenCV can't load / no page found; header Auto-crop toggle. Builds on
+  the earlier scan fix (`generateNoteFromMedia` Gemini vision model chain +
+  tolerant parse; `/api/scan` returns `detail`). Build, lint, tsc green.
 - 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
   Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
   or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`
@@ -193,9 +194,6 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   `globals.css`; PNG via `html-to-image`; `.docx` via `src/lib/export/docx.ts`
   (`docx`). Added `.lumi-mark` highlighter on key terms. `NoteToolbar` now takes
   `note` and shows Edit + Export (dropped the Share stub). Build, lint, tsc green.
-- 2026-10-10 — Local-first conversion (commit `1d004cb`, pushed to `main`):
-  removed all auth + the Postgres data layer (`src/lib/auth`, `src/lib/db`,
-  `src/proxy.ts`, login/signup, `/api/auth/*`, `PATCH /api/notes/[id]`,
-  `db/schema.sql`); notes persist in IndexedDB (`src/lib/local`); dropped `pg`,
-  `@types/pg`, `@vercel/functions`; marketing CTAs point to `/`. Build, lint,
+- 2026-10-10 — Local-first conversion (commit `1d004cb`, pushed): removed auth +
+  Postgres (`src/lib/auth`, `src/lib/db`, `/api/auth/*`); notes in IndexedDB.
   tsc green.
