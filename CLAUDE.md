@@ -118,17 +118,14 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Scanner made fully functional (pushed): fixed the Gemini 404s —
-  valid ids verified live: NOTE_CHAIN gemini = `gemini-3.5-flash`, VISION_MODELS =
-  `gemini-3.5-flash` / `gemini-flash-lite-latest` / `gemini-2.5-flash-lite` (2.0/
-  2.5-flash, 1.5-flash, flash-latest are gone/flaky). OpenCV.js is now SELF-HOSTED
-  (`public/vendor/opencv.js`, ~10MB, wasm embedded, same-origin) — the external
-  docs.opencv.org CDN was slow and left scanning stuck on "Preparing". Scanner is
-  non-blocking: capture always works + falls back to a plain enhanced photo, header
-  Auto-crop toggle, "unavailable" if OpenCV fails. PDF import verified live (200).
-- 2026-10-11 — Premium auto-crop scanner (pushed `3361706`): `doc-scanner.tsx`
-  lazy-loads OpenCV.js (`src/lib/scan/opencv.ts`) to auto-detect page edges — a
-  live lime border locks on, capture perspective-crops + CLAHE-cleans the page.
+- 2026-10-11 — Scanner reworked to be instant (pushed): removed the OpenCV.js
+  auto-crop entirely — the 10MB wasm made the camera hang on "Preparing" and
+  wasn't quick like other apps. `doc-scanner.tsx` is now dependency-free: live
+  camera + alignment frame, instant multi-page capture, fast grayscale/contrast
+  enhance; the AI reads the photographed pages server-side. Deleted
+  `src/lib/scan/opencv.ts` + `public/vendor/opencv.js`. Gemini 404 fix retained:
+  NOTE_CHAIN gemini = `gemini-3.5-flash`; VISION_MODELS = `gemini-3.5-flash` /
+  `gemini-flash-lite-latest` / `gemini-2.5-flash-lite` (verified live; PDF 200).
 - 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
   Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
   or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`

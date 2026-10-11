@@ -1,3 +1,0 @@
-# Vendored OpenCV.js (minified, embedded wasm data URI): never apply EOL
-# normalization — keep bytes exactly as downloaded.
-public/vendor/opencv.js -text
