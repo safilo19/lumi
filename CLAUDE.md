@@ -46,6 +46,8 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 - `katex` for math (`formula.expr` is LaTeX); CSS imported in `layout.tsx`.
 - Export: `docx` (Word) + `html-to-image` (PNG); PDF is browser print. Logic in
   `src/lib/export/` + `components/app/export-dialog.tsx`.
+- `@xyflow/react` (React Flow) powers the draggable/zoomable diagram canvas
+  (`components/app/diagram-canvas.tsx`) for diagram/flowchart/mindmap blocks.
 - Fonts: Fredoka (`--font-display`), Nunito (`--font-sans`), Geist Mono
   (`--font-mono`), **Patrick Hand** (`--font-hand`, handwriting — used for note
   content on screen + export).
@@ -112,7 +114,12 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Font/ask/diagram pass (not committed): handwriting (Caveat) now
+- 2026-10-11 — Draggable diagram canvas (not committed): diagram/flowchart/
+  mindmap blocks now render in `diagram-canvas.tsx` via `@xyflow/react` — nodes
+  are draggable, the canvas pans/zooms (Controls + fit view) with a fullscreen
+  toggle; replaced the old static SVG renderers (removed DiagramFlow/Flowchart/
+  Mindmap + helpers from `note-blocks.tsx`). Build (clean), lint, tsc green.
+- 2026-10-11 — Font/ask/diagram pass (committed `e148cbd`, not pushed): handwriting (Caveat) now
   only on headings + titles; note body reverted to clean sans. Ask-your-notes is
   embedded in every note (`ask-note.tsx`), standalone `/ask` route + nav removed;
   `/api/ask` gives a clear "AI not configured" message when keys are missing, and

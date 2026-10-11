@@ -282,3 +282,13 @@ body {
   background: transparent;
   padding: 0;
 }
+
+/* React Flow (interactive diagrams): hide the attribution + connection handles
+   for a clean, premium canvas. */
+.react-flow__attribution {
+  display: none !important;
+}
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}

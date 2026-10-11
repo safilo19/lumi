@@ -9,15 +9,12 @@ import {
 import {
   SparkleIcon,
   FunctionIcon,
-  ArrowRightIcon,
   LightbulbIcon,
   PushPinIcon,
   FlaskIcon,
   WarningIcon,
   BookmarkSimpleIcon,
   BookOpenIcon,
-  CaretDownIcon,
-  DiamondIcon,
   ArrowsOutIcon,
   PlusIcon,
   MinusIcon,
@@ -26,14 +23,8 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import katex from "katex";
 import { type NoteBlock } from "@/lib/mock-data";
+import { DiagramCanvas } from "@/components/app/diagram-canvas";
 import { cn } from "@/lib/utils";
-
-const nodeColors = [
-  "bg-accent text-accent-ink",
-  "bg-lime text-lime-ink",
-  "bg-coral text-coral-ink",
-  "bg-ink text-paper",
-];
 
 // Render a LaTeX expression to KaTeX HTML. throwOnError:false degrades bad
 // LaTeX to visible source instead of crashing the whole note.
@@ -44,15 +35,6 @@ function Katex({ expr, display }: { expr: string; display?: boolean }) {
     output: "html",
   });
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-function branchTint(i: number) {
-  const tints = [
-    "border-accent-weak-ink/20 bg-accent-weak text-accent-weak-ink",
-    "border-lime-deep/25 bg-lime-weak text-lime-ink",
-    "border-coral/30 bg-coral-weak text-coral-weak-ink",
-  ];
-  return tints[i % tints.length];
 }
 
 const calloutTones = {
@@ -84,14 +66,6 @@ const calloutTones = {
     ink: "text-coral-weak-ink",
     chip: "text-coral",
   },
-} as const;
-
-const flowStyles = {
-  start: "bg-lime text-lime-ink",
-  end: "bg-accent text-accent-ink",
-  decision: "bg-coral text-coral-ink",
-  io: "bg-surface-2 text-ink border-2 border-line-strong",
-  process: "bg-surface text-ink border-2 border-line-strong",
 } as const;
 
 export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
@@ -175,11 +149,9 @@ export function Block({ block }: { block: NoteBlock }) {
         </div>
       );
     case "diagram":
-      return <DiagramFlow caption={block.caption} nodes={block.nodes} />;
     case "flowchart":
-      return <Flowchart caption={block.caption} steps={block.steps} />;
     case "mindmap":
-      return <Mindmap center={block.center} branches={block.branches} />;
+      return <DiagramCanvas block={block} />;
     case "glossary":
       return (
         <section className="rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
@@ -220,115 +192,6 @@ export function Block({ block }: { block: NoteBlock }) {
         </FigureFrame>
       );
   }
-}
-
-function DiagramFlow({ caption, nodes }: { caption: string; nodes: string[] }) {
-  return (
-    <FigureFrame caption={caption}>
-      <div className="flex flex-wrap items-center gap-3">
-        {nodes.map((node, n) => (
-          <div key={node} className="flex items-center gap-3">
-            <span
-              className={cn(
-                "rounded-2xl px-4 py-2 font-display text-sm font-semibold",
-                nodeColors[n % nodeColors.length],
-              )}
-            >
-              {node}
-            </span>
-            {n < nodes.length - 1 && (
-              <ArrowRightIcon size={18} weight="bold" className="text-ink-faint" />
-            )}
-          </div>
-        ))}
-      </div>
-    </FigureFrame>
-  );
-}
-
-type FlowSteps = Extract<NoteBlock, { kind: "flowchart" }>["steps"];
-
-function Flowchart({ caption, steps }: { caption: string; steps: FlowSteps }) {
-  return (
-    <FigureFrame caption={caption}>
-      <div className="flex flex-col items-center">
-        {steps.map((step, s) => (
-          <div key={s} className="flex w-full flex-col items-center">
-            <div
-              className={cn(
-                "flex max-w-full items-center gap-1.5 px-4 py-2 text-center font-display text-sm font-semibold",
-                step.type === "decision" ? "rounded-xl" : "rounded-2xl",
-                flowStyles[step.type],
-              )}
-            >
-              {step.type === "decision" ? (
-                <DiamondIcon size={14} weight="fill" className="shrink-0" />
-              ) : null}
-              {step.text}
-            </div>
-            {step.branches && step.branches.length > 0 ? (
-              <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {step.branches.map((br) => (
-                  <span
-                    key={br.label}
-                    className="rounded-full border-2 border-line-strong bg-surface-2 px-3 py-1 font-sans text-xs font-bold text-ink"
-                  >
-                    <span className="text-coral">{br.label}:</span> {br.text}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            {s < steps.length - 1 ? (
-              <div className="my-1 flex flex-col items-center text-ink-faint">
-                <div className="h-3 w-0.5 bg-line-strong" />
-                <CaretDownIcon size={14} weight="bold" className="-mt-1" />
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </FigureFrame>
-  );
-}
-
-type MindBranches = Extract<NoteBlock, { kind: "mindmap" }>["branches"];
-
-function Mindmap({ center, branches }: { center: string; branches: MindBranches }) {
-  return (
-    <FigureFrame>
-      <div className="flex justify-center">
-        <span className="rounded-full bg-ink px-5 py-2 font-display text-base font-bold text-paper">
-          {center}
-        </span>
-      </div>
-      <div className="mx-auto my-2 h-4 w-0.5 bg-line-strong" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {branches.map((br, bi) => (
-          <details
-            key={br.label}
-            open
-            className={cn("rounded-2xl border-2 p-3", branchTint(bi))}
-          >
-            <summary className="cursor-pointer list-none font-display text-sm font-bold">
-              {br.label}
-            </summary>
-            {br.children.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {br.children.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full bg-surface px-2.5 py-1 font-sans text-xs font-semibold text-ink-soft"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </details>
-        ))}
-      </div>
-    </FigureFrame>
-  );
 }
 
 function FigureFrame({
