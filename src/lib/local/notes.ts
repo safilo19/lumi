@@ -4,19 +4,20 @@
 // Postgres DAL exposed (listNotes, getNote, createNote, updateNote,
 // countNotesByCourse) so the UI swapped over with minimal churn, but every read
 // and write now stays inside the browser.
-import { notes as seedNotes, type Note, type NoteBlock } from "@/lib/mock-data";
+import { type Note, type NoteBlock } from "@/lib/mock-data";
 
 const DB_NAME = "lumi";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const NOTES = "notes";
 const META = "meta";
+export const CARDS = "cards";
 
 function byRecencyDesc(a: Note, b: Note) {
   return +new Date(b.recordedAt) - +new Date(a.recordedAt);
 }
 
 // Promisify a one-shot IDBRequest.
-function reqResult<T>(req: IDBRequest<T>): Promise<T> {
+export function reqResult<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -24,7 +25,7 @@ function reqResult<T>(req: IDBRequest<T>): Promise<T> {
 }
 
 // Resolve once a readwrite transaction has fully committed.
-function txDone(tx: IDBTransaction): Promise<void> {
+export function txDone(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -34,7 +35,7 @@ function txDone(tx: IDBTransaction): Promise<void> {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function openDB(): Promise<IDBDatabase> {
+export function openDB(): Promise<IDBDatabase> {
   if (typeof indexedDB === "undefined") {
     return Promise.reject(new Error("IndexedDB is unavailable here."));
   }
@@ -45,6 +46,7 @@ function openDB(): Promise<IDBDatabase> {
       const db = open.result;
       if (!db.objectStoreNames.contains(NOTES)) db.createObjectStore(NOTES, { keyPath: "id" });
       if (!db.objectStoreNames.contains(META)) db.createObjectStore(META, { keyPath: "key" });
+      if (!db.objectStoreNames.contains(CARDS)) db.createObjectStore(CARDS, { keyPath: "id" });
     };
     open.onsuccess = () => resolve(open.result);
     open.onerror = () => reject(open.error);
@@ -52,26 +54,10 @@ function openDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-// Write the sample notes once, the first time the app runs on this device. A
-// "seeded" flag in meta means a user who clears their notes gets a genuinely
-// empty library instead of the samples quietly reappearing.
-async function ensureSeeded(db: IDBDatabase): Promise<void> {
-  const seeded = await reqResult(
-    db.transaction(META, "readonly").objectStore(META).get("seeded"),
-  );
-  if (seeded) return;
-  const tx = db.transaction([NOTES, META], "readwrite");
-  const store = tx.objectStore(NOTES);
-  for (const n of seedNotes) store.put(n);
-  tx.objectStore(META).put({ key: "seeded", value: true });
-  await txDone(tx);
-}
-
-// Every public call funnels through here, so the store is open and seeded.
+// A fresh install starts with an empty library — no sample notes are seeded.
+// Every public call funnels through here so the store is open first.
 async function ready(): Promise<IDBDatabase> {
-  const db = await openDB();
-  await ensureSeeded(db);
-  return db;
+  return openDB();
 }
 
 async function allNotes(db: IDBDatabase): Promise<Note[]> {
@@ -133,6 +119,7 @@ export type CreateNoteInput = {
   blocks: NoteBlock[];
   lecturer?: string;
   durationMin?: number;
+  tags?: string[];
 };
 
 export async function createNote(input: CreateNoteInput): Promise<Note> {
@@ -146,6 +133,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
     durationMin: input.durationMin ?? 0,
     recordedAt: new Date().toISOString(),
     language: input.language,
+    tags: input.tags ?? [],
     blocks: input.blocks,
   };
   const tx = db.transaction(NOTES, "readwrite");
@@ -154,7 +142,11 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
   return note;
 }
 
-export type UpdateNoteInput = { title?: string; blocks?: NoteBlock[] };
+export type UpdateNoteInput = {
+  title?: string;
+  blocks?: NoteBlock[];
+  tags?: string[];
+};
 
 export async function updateNote(
   id: string,
@@ -167,6 +159,7 @@ export async function updateNote(
     ...current,
     title: patch.title?.trim() || current.title,
     blocks: patch.blocks ?? current.blocks,
+    tags: patch.tags ?? current.tags,
   };
   const tx = db.transaction(NOTES, "readwrite");
   tx.objectStore(NOTES).put(next);
@@ -174,8 +167,7 @@ export async function updateNote(
   return next;
 }
 
-// Settings → "clear all local notes". The seeded flag stays set, so the sample
-// notes do not come back; the user asked for an empty library.
+// Settings -> "clear all local notes": wipes the user's library on this device.
 export async function clearAllNotes(): Promise<void> {
   const db = await ready();
   const tx = db.transaction(NOTES, "readwrite");

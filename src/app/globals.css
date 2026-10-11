@@ -153,6 +153,7 @@
   --font-display: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-hand: var(--font-patrick-hand), "Patrick Hand", ui-rounded, cursive;
 
   --radius-card: 26px;
   --radius-input: 16px;
@@ -242,4 +243,42 @@ body {
   .paper-grain::after {
     display: none !important;
   }
+}
+
+/* Lumi highlighter — marks important terms, on screen and in export. */
+.lumi-mark {
+  background: linear-gradient(
+    to bottom,
+    transparent 8%,
+    color-mix(in srgb, var(--lime) 70%, transparent) 8% 92%,
+    transparent 92%
+  );
+  padding: 0 0.12em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Export paper styles — set via data-paper on <html> during export so both the
+   on-screen capture (PNG) and the print snapshot (PDF) pick them up. */
+[data-paper="handwritten"] #note-print-area {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 31px,
+      color-mix(in srgb, var(--accent) 12%, transparent) 31px 32px
+    ),
+    var(--paper);
+  padding: 1.5rem 1.75rem;
+  border-radius: 20px;
+}
+[data-paper="clean"] #note-print-area,
+[data-paper="minimal"] #note-print-area {
+  background: #fff;
+}
+[data-paper="minimal"] .lumi-blob {
+  display: none !important;
+}
+[data-paper="minimal"] .lumi-mark {
+  background: transparent;
+  padding: 0;
 }

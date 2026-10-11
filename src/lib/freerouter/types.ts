@@ -23,13 +23,32 @@ export type TranscriptResult = {
 
 // Note blocks mirror src/lib/mock-data.ts NoteBlock exactly, so generated
 // notes render through the existing <NoteBlocks /> with zero changes.
+export type FlowStepType = "start" | "process" | "decision" | "io" | "end";
+
 export type NoteBlock =
   | { kind: "summary"; text: string }
   | { kind: "heading"; text: string }
   | { kind: "paragraph"; text: string }
   | { kind: "bullets"; items: string[] }
+  | { kind: "keyterm"; term: string; definition: string }
+  | { kind: "callout"; tone: "tip" | "important" | "example" | "warning"; text: string }
+  | { kind: "glossary"; items: { term: string; definition: string }[] }
   | { kind: "formula"; label: string; expr: string }
-  | { kind: "diagram"; caption: string; nodes: string[] };
+  | { kind: "diagram"; caption: string; nodes: string[] }
+  | {
+      kind: "flowchart";
+      caption: string;
+      steps: {
+        text: string;
+        type: FlowStepType;
+        branches?: { label: string; text: string }[];
+      }[];
+    }
+  | {
+      kind: "mindmap";
+      center: string;
+      branches: { label: string; children: string[] }[];
+    };
 
 export type GeneratedNote = {
   title: string;

@@ -4,14 +4,15 @@ import { AllProvidersFailedError, type Attempt, type TranscriptResult } from "./
 export type TranscribeInput = {
   audio: Blob;
   filename?: string;
-  // Hint only; our classes are EN/UR mixed so we let the model auto-detect by
-  // default. Pass "en"/"ur" to force one.
+  // Hint for the verbatim-transcription fallback only. The primary path
+  // translates to English, which ignores this. Pass "en"/"ur" to force one.
   language?: string;
 };
 
 /**
- * Transcribe audio through the STT failover chain (Groq Whisper turbo →
- * large-v3). Returns the transcript plus the per-provider attempt log.
+ * Turn lecture audio into an English transcript through the STT failover chain.
+ * Primary: Groq Whisper translation (any language -> English). Fallback:
+ * verbatim transcription. Returns the transcript plus the per-provider log.
  */
 export async function transcribeAudio(
   input: TranscribeInput,
@@ -19,7 +20,7 @@ export async function transcribeAudio(
   const attempts: Attempt[] = [];
   const filename = input.filename ?? "lecture.webm";
 
-  for (const { provider, model } of STT_CHAIN) {
+  for (const { provider, model, mode } of STT_CHAIN) {
     const key = keyFor(provider);
     if (!key) {
       attempts.push({ provider, model, ok: false, ms: 0, error: "no api key" });
@@ -32,15 +33,21 @@ export async function transcribeAudio(
       form.append("file", input.audio, filename);
       form.append("model", model);
       form.append("response_format", "json");
-      if (input.language) form.append("language", input.language);
-      // Nudge Whisper to keep Urdu/English code-switching verbatim.
+      // translate -> English out (the API ignores `language`). transcribe ->
+      // verbatim, so forward the language hint if the caller set one.
+      if (mode === "transcribe" && input.language) {
+        form.append("language", input.language);
+      }
       form.append(
         "prompt",
-        "This is a university lecture that mixes English and Urdu.",
+        mode === "translate"
+          ? "A university lecture spoken in English, Urdu, or a mix. Translate all speech to English."
+          : "This is a university lecture that mixes English and Urdu.",
       );
 
+      const endpoint = mode === "translate" ? "translations" : "transcriptions";
       const res = await fetch(
-        `${OPENAI_COMPAT_BASE[provider]}/audio/transcriptions`,
+        `${OPENAI_COMPAT_BASE[provider]}/audio/${endpoint}`,
         { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form },
       );
 

@@ -16,10 +16,15 @@ import {
   ListBulletsIcon,
   FunctionIcon,
   FlowArrowIcon,
+  BookmarkSimpleIcon,
+  LightbulbIcon,
+  BookOpenIcon,
+  TreeStructureIcon,
+  GraphIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { updateNote } from "@/lib/local/notes";
-import type { NoteBlock } from "@/lib/mock-data";
+import type { NoteBlock, FlowStepType } from "@/lib/mock-data";
 
 type Kind = NoteBlock["kind"];
 
@@ -28,8 +33,13 @@ const KINDS: { kind: Kind; label: string; Icon: typeof SparkleIcon }[] = [
   { kind: "paragraph", label: "Paragraph", Icon: TextAlignLeftIcon },
   { kind: "bullets", label: "Bullets", Icon: ListBulletsIcon },
   { kind: "summary", label: "Summary", Icon: SparkleIcon },
+  { kind: "keyterm", label: "Key term", Icon: BookmarkSimpleIcon },
+  { kind: "callout", label: "Callout", Icon: LightbulbIcon },
   { kind: "formula", label: "Formula", Icon: FunctionIcon },
-  { kind: "diagram", label: "Diagram", Icon: FlowArrowIcon },
+  { kind: "diagram", label: "Flow", Icon: FlowArrowIcon },
+  { kind: "flowchart", label: "Flowchart", Icon: TreeStructureIcon },
+  { kind: "mindmap", label: "Mindmap", Icon: GraphIcon },
+  { kind: "glossary", label: "Glossary", Icon: BookOpenIcon },
 ];
 
 function blankBlock(kind: Kind): NoteBlock {
@@ -44,6 +54,23 @@ function blankBlock(kind: Kind): NoteBlock {
       return { kind, label: "", expr: "" };
     case "diagram":
       return { kind, caption: "", nodes: ["", ""] };
+    case "keyterm":
+      return { kind, term: "", definition: "" };
+    case "callout":
+      return { kind, tone: "tip", text: "" };
+    case "glossary":
+      return { kind, items: [{ term: "", definition: "" }] };
+    case "flowchart":
+      return {
+        kind,
+        caption: "",
+        steps: [
+          { text: "", type: "start" },
+          { text: "", type: "end" },
+        ],
+      };
+    case "mindmap":
+      return { kind, center: "", branches: [{ label: "", children: [""] }] };
   }
 }
 
@@ -59,6 +86,42 @@ function cleanBlocks(blocks: NoteBlock[]): NoteBlock[] {
     if (b.kind === "diagram") {
       return { ...b, nodes: b.nodes.map((n) => n.trim()).filter(Boolean) };
     }
+    if (b.kind === "glossary") {
+      return {
+        ...b,
+        items: b.items
+          .map((it) => ({
+            term: it.term.trim(),
+            definition: it.definition.trim(),
+          }))
+          .filter((it) => it.term || it.definition),
+      };
+    }
+    if (b.kind === "flowchart") {
+      return {
+        ...b,
+        steps: b.steps
+          .map((s) => ({
+            ...s,
+            text: s.text.trim(),
+            branches: s.branches
+              ?.map((br) => ({ label: br.label.trim(), text: br.text.trim() }))
+              .filter((br) => br.label && br.text),
+          }))
+          .filter((s) => s.text),
+      };
+    }
+    if (b.kind === "mindmap") {
+      return {
+        ...b,
+        branches: b.branches
+          .map((br) => ({
+            label: br.label.trim(),
+            children: br.children.map((c) => c.trim()).filter(Boolean),
+          }))
+          .filter((br) => br.label),
+      };
+    }
     return b;
   });
 }
@@ -67,16 +130,19 @@ export function NoteEditor({
   id,
   title: initialTitle,
   blocks: initialBlocks,
+  tags: initialTags = [],
   courseName,
 }: {
   id: string;
   title: string;
   blocks: NoteBlock[];
+  tags?: string[];
   courseName?: string;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [blocks, setBlocks] = useState<NoteBlock[]>(initialBlocks);
+  const [tagsText, setTagsText] = useState(initialTags.join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -103,9 +169,18 @@ export function NoteEditor({
     setSaving(true);
     setError("");
     try {
+      const tags = [
+        ...new Set(
+          tagsText
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        ),
+      ];
       const updated = await updateNote(id, {
         title: title.trim(),
         blocks: cleanBlocks(blocks),
+        tags,
       });
       if (!updated) throw new Error("This note no longer exists.");
       router.push(`/notes/${id}`);
@@ -142,7 +217,14 @@ export function NoteEditor({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
-        className="mb-6 w-full bg-transparent font-display text-3xl font-bold text-ink outline-none placeholder:text-ink-faint"
+        className="mb-3 w-full bg-transparent font-display text-3xl font-bold text-ink outline-none placeholder:text-ink-faint"
+      />
+
+      <input
+        value={tagsText}
+        onChange={(e) => setTagsText(e.target.value)}
+        placeholder="Tags (comma separated)"
+        className="mb-6 w-full rounded-full border-2 border-line bg-surface px-4 py-2 text-sm font-semibold text-ink outline-none transition-colors focus:border-accent placeholder:text-ink-faint"
       />
 
       {error ? (
@@ -192,8 +274,13 @@ const KIND_LABEL: Record<Kind, string> = {
   paragraph: "Paragraph",
   bullets: "Bullets",
   summary: "Summary",
+  keyterm: "Key term",
+  callout: "Callout",
   formula: "Formula",
-  diagram: "Diagram",
+  diagram: "Flow",
+  flowchart: "Flowchart",
+  mindmap: "Mindmap",
+  glossary: "Glossary",
 };
 
 function BlockCard({
@@ -336,6 +423,85 @@ function BlockFields({
           />
         </div>
       );
+    case "keyterm":
+      return (
+        <div className="space-y-2">
+          <input
+            value={block.term}
+            onChange={(e) => onChange({ ...block, term: e.target.value })}
+            placeholder="Term (e.g. Deadlock)"
+            className={fieldCls}
+          />
+          <textarea
+            value={block.definition}
+            onChange={(e) => onChange({ ...block, definition: e.target.value })}
+            placeholder="Plain-English definition"
+            rows={2}
+            className={fieldCls + " resize-y"}
+          />
+        </div>
+      );
+    case "callout":
+      return (
+        <div className="space-y-2">
+          <select
+            value={block.tone}
+            onChange={(e) =>
+              onChange({ ...block, tone: e.target.value as typeof block.tone })
+            }
+            className={fieldCls}
+          >
+            <option value="tip">Tip</option>
+            <option value="important">Why it matters</option>
+            <option value="example">Example</option>
+            <option value="warning">Watch out</option>
+          </select>
+          <textarea
+            value={block.text}
+            onChange={(e) => onChange({ ...block, text: e.target.value })}
+            placeholder="Callout text"
+            rows={3}
+            className={fieldCls + " resize-y"}
+          />
+        </div>
+      );
+    case "glossary":
+      return (
+        <PairList
+          rows={block.items}
+          onRows={(items) => onChange({ ...block, items })}
+        />
+      );
+    case "flowchart":
+      return (
+        <div className="space-y-2">
+          <input
+            value={block.caption}
+            onChange={(e) => onChange({ ...block, caption: e.target.value })}
+            placeholder="Flowchart caption"
+            className={fieldCls}
+          />
+          <StepList
+            steps={block.steps}
+            onSteps={(steps) => onChange({ ...block, steps })}
+          />
+        </div>
+      );
+    case "mindmap":
+      return (
+        <div className="space-y-2">
+          <input
+            value={block.center}
+            onChange={(e) => onChange({ ...block, center: e.target.value })}
+            placeholder="Central idea"
+            className={fieldCls}
+          />
+          <BranchList
+            branches={block.branches}
+            onBranches={(branches) => onChange({ ...block, branches })}
+          />
+        </div>
+      );
   }
 }
 // __APPEND_5__
@@ -381,6 +547,150 @@ function RowList({
       >
         <PlusIcon weight="bold" className="size-4" />
         Add row
+      </button>
+    </div>
+  );
+}
+
+function PairList({
+  rows,
+  onRows,
+}: {
+  rows: { term: string; definition: string }[];
+  onRows: (rows: { term: string; definition: string }[]) => void;
+}) {
+  const set = (i: number, patch: Partial<{ term: string; definition: string }>) =>
+    onRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => onRows(rows.filter((_, j) => j !== i));
+  const add = () => onRows([...rows, { term: "", definition: "" }]);
+  return (
+    <div className="space-y-2">
+      {rows.map((row, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            value={row.term}
+            onChange={(e) => set(i, { term: e.target.value })}
+            placeholder="Term"
+            className={fieldCls}
+          />
+          <input
+            value={row.definition}
+            onChange={(e) => set(i, { definition: e.target.value })}
+            placeholder="Definition"
+            className={fieldCls}
+          />
+          <IconBtn label="Remove" onClick={() => remove(i)} disabled={rows.length <= 1} danger>
+            <TrashSimpleIcon weight="bold" className="size-4" />
+          </IconBtn>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+      >
+        <PlusIcon weight="bold" className="size-4" />
+        Add term
+      </button>
+    </div>
+  );
+}
+
+function StepList({
+  steps,
+  onSteps,
+}: {
+  steps: Extract<NoteBlock, { kind: "flowchart" }>["steps"];
+  onSteps: (steps: Extract<NoteBlock, { kind: "flowchart" }>["steps"]) => void;
+}) {
+  const setStep = (
+    i: number,
+    patch: Partial<{ text: string; type: FlowStepType }>,
+  ) => onSteps(steps.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  const remove = (i: number) => onSteps(steps.filter((_, j) => j !== i));
+  const add = () => onSteps([...steps, { text: "", type: "process" }]);
+  return (
+    <div className="space-y-2">
+      {steps.map((step, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <select
+            value={step.type}
+            onChange={(e) => setStep(i, { type: e.target.value as FlowStepType })}
+            className={fieldCls}
+          >
+            <option value="start">Start</option>
+            <option value="process">Process</option>
+            <option value="decision">Decision</option>
+            <option value="io">In/Out</option>
+            <option value="end">End</option>
+          </select>
+          <input
+            value={step.text}
+            onChange={(e) => setStep(i, { text: e.target.value })}
+            placeholder="Step"
+            className={fieldCls}
+          />
+          <IconBtn label="Remove step" onClick={() => remove(i)} disabled={steps.length <= 2} danger>
+            <TrashSimpleIcon weight="bold" className="size-4" />
+          </IconBtn>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+      >
+        <PlusIcon weight="bold" className="size-4" />
+        Add step
+      </button>
+    </div>
+  );
+}
+
+function BranchList({
+  branches,
+  onBranches,
+}: {
+  branches: Extract<NoteBlock, { kind: "mindmap" }>["branches"];
+  onBranches: (b: Extract<NoteBlock, { kind: "mindmap" }>["branches"]) => void;
+}) {
+  const setBranch = (
+    i: number,
+    patch: Partial<{ label: string; children: string[] }>,
+  ) => onBranches(branches.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+  const remove = (i: number) => onBranches(branches.filter((_, j) => j !== i));
+  const add = () => onBranches([...branches, { label: "", children: [""] }]);
+  return (
+    <div className="space-y-3">
+      {branches.map((br, i) => (
+        <div key={i} className="rounded-[var(--radius-input)] border-2 border-line p-2">
+          <div className="flex items-center gap-2">
+            <input
+              value={br.label}
+              onChange={(e) => setBranch(i, { label: e.target.value })}
+              placeholder="Branch label"
+              className={fieldCls}
+            />
+            <IconBtn label="Remove branch" onClick={() => remove(i)} disabled={branches.length <= 1} danger>
+              <TrashSimpleIcon weight="bold" className="size-4" />
+            </IconBtn>
+          </div>
+          <div className="mt-2 pl-2">
+            <RowList
+              rows={br.children}
+              onRows={(children) => setBranch(i, { children })}
+              placeholder="Related point"
+            />
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+      >
+        <PlusIcon weight="bold" className="size-4" />
+        Add branch
       </button>
     </div>
   );

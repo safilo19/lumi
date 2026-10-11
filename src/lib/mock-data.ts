@@ -2,13 +2,32 @@
 // Shapes here mirror the real DB schema we will back with Postgres later,
 // so screens built against this will swap over to live data with minimal churn.
 
+export type FlowStepType = "start" | "process" | "decision" | "io" | "end";
+
 export type NoteBlock =
   | { kind: "summary"; text: string }
   | { kind: "heading"; text: string }
   | { kind: "paragraph"; text: string }
   | { kind: "bullets"; items: string[] }
+  | { kind: "keyterm"; term: string; definition: string }
+  | { kind: "callout"; tone: "tip" | "important" | "example" | "warning"; text: string }
+  | { kind: "glossary"; items: { term: string; definition: string }[] }
   | { kind: "formula"; label: string; expr: string }
-  | { kind: "diagram"; caption: string; nodes: string[] };
+  | { kind: "diagram"; caption: string; nodes: string[] }
+  | {
+      kind: "flowchart";
+      caption: string;
+      steps: {
+        text: string;
+        type: FlowStepType;
+        branches?: { label: string; text: string }[];
+      }[];
+    }
+  | {
+      kind: "mindmap";
+      center: string;
+      branches: { label: string; children: string[] }[];
+    };
 
 export type Note = {
   id: string;
@@ -18,6 +37,7 @@ export type Note = {
   durationMin: number;
   recordedAt: string; // ISO date
   language: "English" | "Urdu" | "Mixed";
+  tags?: string[];
   blocks: NoteBlock[];
 };
 

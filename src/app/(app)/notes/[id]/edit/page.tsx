@@ -29,6 +29,7 @@ export default function EditNotePage({
       id={note.id}
       title={note.title}
       blocks={note.blocks}
+      tags={note.tags ?? []}
       courseName={course?.name}
     />
   );

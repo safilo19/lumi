@@ -21,9 +21,18 @@ export function hasKey(provider: Provider): boolean {
 // (Oct 2026) — older ids like llama-3.3-70b / gemini-2.0-flash are retired.
 // `gemini-flash-latest` is an alias that tracks the current Flash release so
 // we don't have to chase version bumps.
-export const STT_CHAIN: { provider: Provider; model: string }[] = [
-  { provider: "groq", model: "whisper-large-v3-turbo" },
-  { provider: "groq", model: "whisper-large-v3" },
+// Audio -> text. Primary path translates straight to English (Groq's
+// /audio/translations, which only supports whisper-large-v3) so the stored
+// transcript is English whatever language the lecture was in. If translation
+// fails we fall back to a verbatim transcription; the note model then
+// translates to English anyway, so the notes stay English either way.
+export const STT_CHAIN: {
+  provider: Provider;
+  model: string;
+  mode: "translate" | "transcribe";
+}[] = [
+  { provider: "groq", model: "whisper-large-v3", mode: "translate" },
+  { provider: "groq", model: "whisper-large-v3-turbo", mode: "transcribe" },
 ];
 
 export const NOTE_CHAIN: { provider: Provider; model: string }[] = [

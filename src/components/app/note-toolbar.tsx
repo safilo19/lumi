@@ -3,43 +3,48 @@
 import { useRouter } from "next/navigation";
 import {
   PencilSimpleLineIcon,
-  FilePdfIcon,
-  ShareNetworkIcon,
+  CardsThreeIcon,
+  ExamIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { ExportDialog } from "@/components/app/export-dialog";
+import { generateCardsForNote } from "@/lib/local/cards";
+import type { Note } from "@/lib/mock-data";
 
-// Share is still a stub until sharing lands in v2. Export PDF uses the browser's
-// own print-to-PDF, scoped by the `@media print` rules in globals.css so only
-// the note content (not the app chrome) reaches the page. Edit navigates to the
-// block editor at /notes/[id]/edit.
-export function NoteToolbar({ noteId }: { noteId: string }) {
+// Edit opens the block editor. Study turns the note into flashcards and jumps
+// to the review queue. Quiz builds a quick MCQ test from this note. Export
+// opens the branded export dialog (PDF / image / Word).
+export function NoteToolbar({ note }: { note: Note }) {
   const router = useRouter();
+
+  async function study() {
+    await generateCardsForNote(note);
+    router.push("/review");
+  }
+
   return (
     <div className="no-print flex flex-wrap items-center gap-2">
       <Button
         size="sm"
         variant="secondary"
-        onClick={() => router.push(`/notes/${noteId}/edit`)}
+        onClick={() => router.push(`/notes/${note.id}/edit`)}
       >
         <PencilSimpleLineIcon size={16} />
         Edit
       </Button>
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={() => window.print()}
-      >
-        <FilePdfIcon size={16} />
-        Export PDF
+      <Button size="sm" variant="lime" onClick={study}>
+        <CardsThreeIcon size={16} weight="bold" />
+        Study
       </Button>
       <Button
         size="sm"
-        variant="ghost"
-        onClick={() => alert("Sharing lands in v2.")}
+        variant="soft"
+        onClick={() => router.push(`/quiz?note=${note.id}`)}
       >
-        <ShareNetworkIcon size={16} />
-        Share
+        <ExamIcon size={16} weight="bold" />
+        Quiz
       </Button>
+      <ExportDialog note={note} />
     </div>
   );
 }

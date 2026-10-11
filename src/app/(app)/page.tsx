@@ -5,11 +5,15 @@ import {
   PlusIcon,
   FireIcon,
   ArrowRightIcon,
+  CardsThreeIcon,
+  ExamIcon,
+  ChatCircleDotsIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
 import { courses } from "@/lib/mock-data";
 import { useNotes } from "@/lib/local/use-notes";
+import { cn } from "@/lib/utils";
 
 const courseTints = [
   "bg-accent text-accent-ink",
@@ -51,6 +55,27 @@ export default function DashboardPage() {
             </Button>
           </Link>
         </div>
+      </section>
+
+      <section className="mt-6 grid grid-cols-3 gap-3">
+        <ToolLink
+          href="/review"
+          Icon={CardsThreeIcon}
+          label="Review"
+          tint="bg-lime-weak text-lime-ink"
+        />
+        <ToolLink
+          href="/quiz"
+          Icon={ExamIcon}
+          label="Quiz me"
+          tint="bg-coral-weak text-coral-weak-ink"
+        />
+        <ToolLink
+          href="/ask"
+          Icon={ChatCircleDotsIcon}
+          label="Ask notes"
+          tint="bg-accent-weak text-accent-weak-ink"
+        />
       </section>
 
       <section className="mt-10">
@@ -107,5 +132,31 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ToolLink({
+  href,
+  Icon,
+  label,
+  tint,
+}: {
+  href: string;
+  Icon: typeof MicrophoneIcon;
+  label: string;
+  tint: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-2 rounded-[var(--radius-card)] border-2 border-line bg-surface p-4 text-center shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-accent"
+    >
+      <span
+        className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", tint)}
+      >
+        <Icon size={22} weight="duotone" />
+      </span>
+      <span className="text-sm font-bold text-ink">{label}</span>
+    </Link>
   );
 }

@@ -49,7 +49,7 @@ export default function NotePage({
               {course?.code}
             </span>
           </div>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink">
+          <h1 className="mt-3 font-hand text-4xl text-ink">
             {note.title}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-soft">
@@ -66,8 +66,20 @@ export default function NotePage({
               {note.language}
             </span>
           </div>
+          {note.tags && note.tags.length ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {note.tags.map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-ink-soft"
+                >
+                  #{t}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <NoteToolbar noteId={note.id} />
+        <NoteToolbar note={note} />
       </div>
 
       <hr className="my-8 border-line" />
