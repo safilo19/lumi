@@ -65,6 +65,9 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   server-side; the note's id is assigned client-side).
 - `src/app/api/quiz/`, `src/app/api/ask/` — AI quiz generation + ask-your-notes
   (both call FreeRouter `freeChat`; client sends note context, keys stay server).
+- `src/app/api/visual/` — AI generates one diagram/flowchart/mindmap/illustration
+  (SVG) block from note context. `src/app/api/photo/` — free no-key image search
+  (Openverse). Note blocks now include `image` + `illustration`.
 - `src/lib/local/cards.ts` — flashcards in IndexedDB (`cards` store, DB v2) +
   deterministic card generation from note blocks. `src/lib/study/` — `sm2.ts`
   (spaced repetition) + `quiz.ts` (type). `src/lib/notes/text.ts` —
@@ -108,6 +111,19 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Media + AI visuals + interactive diagrams (not committed): added
+  `image` + `illustration` note blocks. Editor gained an "Add with AI and media"
+  panel: AI-generate illustration/flowchart/mindmap/diagram from the note
+  (`/api/visual`), upload an image, or find a free photo (`/api/photo`,
+  Openverse). Diagrams now render in a shared `FigureFrame` with expand-to-
+  fullscreen; mindmap branches are collapsible (`<details>`). `blocksToText`
+  exported from `lib/notes/text.ts`. Build, lint, tsc green.
+- 2026-10-11 — Handwriting font fix + note visual redesign (committed `e7c5479`,
+  NOT yet pushed — prod-deploy gate): swapped Patrick Hand (single static weight,
+  wasn't applying) for the Caveat variable font (`--font-hand-src` → `--font-hand`),
+  applied across note view, note cards, and export; scaled note typography.
+  Added `components/app/note-art.tsx` — a seeded generative SVG header per note
+  (deterministic from note id). Build, lint, tsc green.
 - 2026-10-11 — Study features + diagram polish (Phases 6-9 + 3; not committed):
   flashcards + SM-2 spaced repetition (`/review`, `lib/local/cards.ts`,
   `lib/study/sm2.ts`, `cards` IndexedDB store, DB v2); AI quiz (`/quiz`,

@@ -1,3 +1,5 @@
+"use client";
+import { useState, type ReactNode } from "react";
 import {
   SparkleIcon,
   FunctionIcon,
@@ -10,6 +12,7 @@ import {
   BookOpenIcon,
   CaretDownIcon,
   DiamondIcon,
+  ArrowsOutIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import katex from "katex";
 import { type NoteBlock } from "@/lib/mock-data";
@@ -186,12 +189,32 @@ function Block({ block }: { block: NoteBlock }) {
           </dl>
         </section>
       );
+    case "image":
+      return (
+        <FigureFrame caption={block.caption}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={block.src}
+            alt={block.alt}
+            className="w-full rounded-[var(--radius-input)]"
+          />
+        </FigureFrame>
+      );
+    case "illustration":
+      return (
+        <FigureFrame caption={block.caption}>
+          <div
+            className="w-full [&_svg]:h-auto [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: block.svg }}
+          />
+        </FigureFrame>
+      );
   }
 }
 
 function DiagramFlow({ caption, nodes }: { caption: string; nodes: string[] }) {
   return (
-    <figure className="rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
+    <FigureFrame caption={caption}>
       <div className="flex flex-wrap items-center gap-3">
         {nodes.map((node, n) => (
           <div key={node} className="flex items-center gap-3">
@@ -209,12 +232,7 @@ function DiagramFlow({ caption, nodes }: { caption: string; nodes: string[] }) {
           </div>
         ))}
       </div>
-      {caption ? (
-        <figcaption className="mt-3 font-sans text-sm font-semibold text-ink-soft">
-          {caption}
-        </figcaption>
-      ) : null}
-    </figure>
+    </FigureFrame>
   );
 }
 
@@ -222,7 +240,7 @@ type FlowSteps = Extract<NoteBlock, { kind: "flowchart" }>["steps"];
 
 function Flowchart({ caption, steps }: { caption: string; steps: FlowSteps }) {
   return (
-    <figure className="rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
+    <FigureFrame caption={caption}>
       <div className="flex flex-col items-center">
         {steps.map((step, s) => (
           <div key={s} className="flex w-full flex-col items-center">
@@ -259,12 +277,7 @@ function Flowchart({ caption, steps }: { caption: string; steps: FlowSteps }) {
           </div>
         ))}
       </div>
-      {caption ? (
-        <figcaption className="mt-4 text-center font-sans text-sm font-semibold text-ink-soft">
-          {caption}
-        </figcaption>
-      ) : null}
-    </figure>
+    </FigureFrame>
   );
 }
 
@@ -272,7 +285,7 @@ type MindBranches = Extract<NoteBlock, { kind: "mindmap" }>["branches"];
 
 function Mindmap({ center, branches }: { center: string; branches: MindBranches }) {
   return (
-    <figure className="rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
+    <FigureFrame>
       <div className="flex justify-center">
         <span className="rounded-full bg-ink px-5 py-2 font-display text-base font-bold text-paper">
           {center}
@@ -281,11 +294,14 @@ function Mindmap({ center, branches }: { center: string; branches: MindBranches 
       <div className="mx-auto my-2 h-4 w-0.5 bg-line-strong" />
       <div className="grid gap-3 sm:grid-cols-2">
         {branches.map((br, bi) => (
-          <div
+          <details
             key={br.label}
+            open
             className={cn("rounded-2xl border-2 p-3", branchTint(bi))}
           >
-            <div className="font-display text-sm font-bold">{br.label}</div>
+            <summary className="cursor-pointer list-none font-display text-sm font-bold">
+              {br.label}
+            </summary>
             {br.children.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {br.children.map((c) => (
@@ -298,9 +314,50 @@ function Mindmap({ center, branches }: { center: string; branches: MindBranches 
                 ))}
               </div>
             ) : null}
-          </div>
+          </details>
         ))}
       </div>
+    </FigureFrame>
+  );
+}
+
+function FigureFrame({
+  caption,
+  children,
+}: {
+  caption?: string;
+  children: ReactNode;
+}) {
+  const [zoom, setZoom] = useState(false);
+  return (
+    <figure className="relative rounded-[var(--radius-card)] border-2 border-line bg-surface p-5">
+      <button
+        type="button"
+        onClick={() => setZoom(true)}
+        aria-label="Expand"
+        className="no-print absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-line-strong bg-surface/90 text-ink-soft backdrop-blur transition-colors hover:text-ink"
+      >
+        <ArrowsOutIcon size={15} weight="bold" />
+      </button>
+      <div className="overflow-x-auto">{children}</div>
+      {caption ? (
+        <figcaption className="mt-3 text-center font-sans text-sm font-semibold text-ink-soft">
+          {caption}
+        </figcaption>
+      ) : null}
+      {zoom ? (
+        <div
+          className="no-print fixed inset-0 z-[95] flex items-center justify-center bg-ink/70 p-4"
+          onClick={() => setZoom(false)}
+        >
+          <div
+            className="max-h-full w-full max-w-4xl overflow-auto rounded-[var(--radius-card)] border-2 border-line-strong bg-surface p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {children}
+          </div>
+        </div>
+      ) : null}
     </figure>
   );
 }

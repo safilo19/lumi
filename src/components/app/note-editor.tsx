@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   CaretUpIcon,
@@ -21,9 +21,13 @@ import {
   BookOpenIcon,
   TreeStructureIcon,
   GraphIcon,
+  ImageIcon,
+  MagicWandIcon,
+  UploadSimpleIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { updateNote } from "@/lib/local/notes";
+import { blocksToText } from "@/lib/notes/text";
 import type { NoteBlock, FlowStepType } from "@/lib/mock-data";
 
 type Kind = NoteBlock["kind"];
@@ -71,6 +75,10 @@ function blankBlock(kind: Kind): NoteBlock {
       };
     case "mindmap":
       return { kind, center: "", branches: [{ label: "", children: [""] }] };
+    case "image":
+      return { kind, src: "", alt: "", caption: "" };
+    case "illustration":
+      return { kind, svg: "", caption: "" };
   }
 }
 
@@ -145,6 +153,9 @@ export function NoteEditor({
   const [tagsText, setTagsText] = useState(initialTags.join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [genBusy, setGenBusy] = useState<string | null>(null);
+  const [genError, setGenError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function patchBlock(i: number, next: NoteBlock) {
     setBlocks((bs) => bs.map((b, j) => (j === i ? next : b)));
@@ -163,6 +174,65 @@ export function NoteEditor({
   }
   function addBlock(kind: Kind) {
     setBlocks((bs) => [...bs, blankBlock(kind)]);
+  }
+  function appendBlock(block: NoteBlock) {
+    setBlocks((bs) => [...bs, block]);
+  }
+  function onUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () =>
+      appendBlock({
+        kind: "image",
+        src: String(reader.result),
+        alt: file.name.replace(/\.[^.]+$/, ""),
+        caption: "",
+      });
+    reader.readAsDataURL(file);
+  }
+  async function generate(
+    kind: "illustration" | "flowchart" | "mindmap" | "diagram",
+  ) {
+    setGenBusy(kind);
+    setGenError("");
+    try {
+      const context = `${title}\n${blocksToText(blocks)}`;
+      const res = await fetch("/api/visual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, context, topic: title }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed.");
+      appendBlock(data.block);
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : "Generation failed.");
+    } finally {
+      setGenBusy(null);
+    }
+  }
+  async function addPhoto() {
+    const q = window.prompt("Search for a photo (topic or keyword):", title);
+    if (!q) return;
+    setGenBusy("photo");
+    setGenError("");
+    try {
+      const res = await fetch(`/api/photo?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No image found.");
+      appendBlock({
+        kind: "image",
+        src: data.url,
+        alt: data.alt,
+        caption: data.attribution,
+      });
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : "Image search failed.");
+    } finally {
+      setGenBusy(null);
+    }
   }
 
   async function save() {
@@ -248,7 +318,32 @@ export function NoteEditor({
         ))}
       </div>
 
-      <div className="mt-6 rounded-[var(--radius-card)] border-2 border-dashed border-line-strong p-4">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        onChange={onUpload}
+        className="hidden"
+      />
+      <div className="mt-6 rounded-[var(--radius-card)] border-2 border-dashed border-accent/40 bg-accent-weak/40 p-4">
+        <p className="mb-3 flex items-center gap-1.5 text-sm font-bold text-accent-weak-ink">
+          <MagicWandIcon size={16} weight="bold" />
+          Add with AI and media
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <GenBtn label="Illustration" Icon={SparkleIcon} busy={genBusy === "illustration"} onClick={() => generate("illustration")} />
+          <GenBtn label="Flowchart" Icon={TreeStructureIcon} busy={genBusy === "flowchart"} onClick={() => generate("flowchart")} />
+          <GenBtn label="Mindmap" Icon={GraphIcon} busy={genBusy === "mindmap"} onClick={() => generate("mindmap")} />
+          <GenBtn label="Diagram" Icon={FlowArrowIcon} busy={genBusy === "diagram"} onClick={() => generate("diagram")} />
+          <GenBtn label="Upload image" Icon={UploadSimpleIcon} busy={false} onClick={() => fileRef.current?.click()} />
+          <GenBtn label="Find photo" Icon={ImageIcon} busy={genBusy === "photo"} onClick={addPhoto} />
+        </div>
+        {genError ? (
+          <p className="mt-2 text-sm font-bold text-coral">{genError}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 rounded-[var(--radius-card)] border-2 border-dashed border-line-strong p-4">
         <p className="mb-3 text-sm font-bold text-ink-soft">Add a block</p>
         <div className="flex flex-wrap gap-2">
           {KINDS.map(({ kind, label, Icon }) => (
@@ -281,6 +376,8 @@ const KIND_LABEL: Record<Kind, string> = {
   flowchart: "Flowchart",
   mindmap: "Mindmap",
   glossary: "Glossary",
+  image: "Image",
+  illustration: "Illustration",
 };
 
 function BlockCard({
@@ -502,6 +599,46 @@ function BlockFields({
           />
         </div>
       );
+    case "image":
+      return (
+        <div className="space-y-2">
+          {block.src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={block.src}
+              alt={block.alt}
+              className="max-h-48 rounded-[var(--radius-input)] border-2 border-line"
+            />
+          ) : null}
+          <input
+            value={block.alt}
+            onChange={(e) => onChange({ ...block, alt: e.target.value })}
+            placeholder="Describe the image (alt text)"
+            className={fieldCls}
+          />
+          <input
+            value={block.caption ?? ""}
+            onChange={(e) => onChange({ ...block, caption: e.target.value })}
+            placeholder="Caption (optional)"
+            className={fieldCls}
+          />
+        </div>
+      );
+    case "illustration":
+      return (
+        <div className="space-y-2">
+          <div
+            className="max-h-48 overflow-hidden rounded-[var(--radius-input)] border-2 border-line bg-surface [&_svg]:h-auto [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: block.svg }}
+          />
+          <input
+            value={block.caption ?? ""}
+            onChange={(e) => onChange({ ...block, caption: e.target.value })}
+            placeholder="Caption (optional)"
+            className={fieldCls}
+          />
+        </div>
+      );
   }
 }
 // __APPEND_5__
@@ -693,6 +830,30 @@ function BranchList({
         Add branch
       </button>
     </div>
+  );
+}
+
+function GenBtn({
+  label,
+  Icon,
+  busy,
+  onClick,
+}: {
+  label: string;
+  Icon: typeof SparkleIcon;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="inline-flex items-center gap-1.5 rounded-full border-2 border-line-strong bg-surface px-3 py-1.5 text-sm font-bold text-ink transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+    >
+      <Icon weight="bold" className="size-4" />
+      {busy ? "Working..." : label}
+    </button>
   );
 }
 

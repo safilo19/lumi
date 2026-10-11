@@ -27,7 +27,9 @@ export type NoteBlock =
       kind: "mindmap";
       center: string;
       branches: { label: string; children: string[] }[];
-    };
+    }
+  | { kind: "image"; src: string; alt: string; caption?: string }
+  | { kind: "illustration"; svg: string; caption?: string };
 
 export type Note = {
   id: string;

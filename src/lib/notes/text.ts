@@ -26,9 +26,17 @@ function blockText(b: NoteBlock): string {
       return `${b.caption}\n${b.steps.map((s) => `- [${s.type}] ${s.text}`).join("\n")}`;
     case "mindmap":
       return `${b.center}\n${b.branches.map((br) => `- ${br.label}: ${br.children.join(", ")}`).join("\n")}`;
+    case "image":
+      return [b.alt, b.caption].filter(Boolean).join(" - ");
+    case "illustration":
+      return b.caption ?? "";
   }
 }
 
+export function blocksToText(blocks: NoteBlock[]): string {
+  return blocks.map(blockText).filter(Boolean).join("\n");
+}
+
 export function noteToPlainText(note: Note): string {
-  return [note.title, ...note.blocks.map(blockText)].filter(Boolean).join("\n");
+  return [note.title, blocksToText(note.blocks)].filter(Boolean).join("\n");
 }

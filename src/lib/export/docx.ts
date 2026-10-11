@@ -142,6 +142,30 @@ function blockParas(block: NoteBlock): Paragraph[] {
             }),
         ),
       ];
+    case "image":
+      return [
+        new Paragraph({
+          children: [new TextRun({ text: `[Image: ${block.alt}]`, italics: true })],
+        }),
+        ...(block.caption
+          ? [
+              new Paragraph({
+                children: [new TextRun({ text: block.caption, italics: true })],
+              }),
+            ]
+          : []),
+      ];
+    case "illustration":
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `[Illustration${block.caption ? `: ${block.caption}` : ""}]`,
+              italics: true,
+            }),
+          ],
+        }),
+      ];
   }
 }
 
