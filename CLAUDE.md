@@ -118,21 +118,23 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Premium auto-crop scanner (not committed): `doc-scanner.tsx` now
-  lazy-loads OpenCV.js (`src/lib/scan/opencv.ts`, pinned CDN 4.9.0) to auto-detect
-  page edges — a live lime border locks on, and capture perspective-crops +
-  CLAHE-cleans the page to a flat "scanned" image. Degrades to a plain enhanced
-  photo if OpenCV can't load / no page found; header Auto-crop toggle. Builds on
-  the earlier scan fix (`generateNoteFromMedia` Gemini vision model chain +
-  tolerant parse; `/api/scan` returns `detail`). Build, lint, tsc green.
+- 2026-10-11 — Scanner made fully functional (pushed): fixed the Gemini 404s —
+  valid ids verified live: NOTE_CHAIN gemini = `gemini-3.5-flash`, VISION_MODELS =
+  `gemini-3.5-flash` / `gemini-flash-lite-latest` / `gemini-2.5-flash-lite` (2.0/
+  2.5-flash, 1.5-flash, flash-latest are gone/flaky). OpenCV.js is now SELF-HOSTED
+  (`public/vendor/opencv.js`, ~10MB, wasm embedded, same-origin) — the external
+  docs.opencv.org CDN was slow and left scanning stuck on "Preparing". Scanner is
+  non-blocking: capture always works + falls back to a plain enhanced photo, header
+  Auto-crop toggle, "unavailable" if OpenCV fails. PDF import verified live (200).
+- 2026-10-11 — Premium auto-crop scanner (pushed `3361706`): `doc-scanner.tsx`
+  lazy-loads OpenCV.js (`src/lib/scan/opencv.ts`) to auto-detect page edges — a
+  live lime border locks on, capture perspective-crops + CLAHE-cleans the page.
 - 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
   Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
   or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`
   (Gemini vision/doc → note, via `generateNoteFromMedia` in `llm.ts`) and
   `/api/notes/from-text` (pasted text or a fetched URL → note; `mode:"revision"`
-  for cheat-sheets). Course detail gained a "Revision sheet" button (merges the
-  course's notes). Sidebar + dashboard link to `/new`. Deferred (chosen but not
-  built): study reminders/notifications (needs push infra; only partial on PWA).
+  for cheat-sheets). Course detail has a "Revision sheet" button; sidebar + dashboard link to `/new`.
 - 2026-10-11 — Record screen overhaul (pushed `c9af589`): real-time canvas
   visualizer `components/app/orbital-bloom.tsx` (Web Audio AnalyserNode →
   concentric rings + rotating frequency petals) behind the record button;

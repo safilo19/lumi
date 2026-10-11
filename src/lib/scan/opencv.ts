@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Lazy OpenCV.js loader + document edge detection / perspective crop. OpenCV.js
-// is ~10MB, so it is injected only when the scanner opens, from a pinned CDN,
-// and every caller degrades gracefully if it fails to load. All cv.Mat objects
-// are released explicitly — the wasm heap is not garbage-collected.
+// is ~10MB, so it is injected only when the scanner opens, and is self-hosted
+// (public/vendor/opencv.js, wasm embedded as a data URI) so it loads same-origin
+// — fast via the CDN edge and with no cross-origin / locateFile surprises. Every
+// caller degrades gracefully if it fails to load. All cv.Mat objects are
+// released explicitly — the wasm heap is not garbage-collected.
 
-const OPENCV_URL = "https://docs.opencv.org/4.9.0/opencv.js";
+const OPENCV_URL = "/vendor/opencv.js";
 
 type CV = any;
 export type Pt = { x: number; y: number };
 
 let cvPromise: Promise<CV> | null = null;
 
-export function loadOpenCv(timeoutMs = 25000): Promise<CV> {
+export function loadOpenCv(timeoutMs = 20000): Promise<CV> {
   if (cvPromise) return cvPromise;
   cvPromise = new Promise<CV>((resolve, reject) => {
     if (typeof window === "undefined") return reject(new Error("no window"));

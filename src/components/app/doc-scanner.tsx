@@ -33,6 +33,7 @@ export function DocScanner({
   const [shots, setShots] = useState<Shot[]>([]);
   const [err, setErr] = useState("");
   const [cvReady, setCvReady] = useState(false);
+  const [cvFailed, setCvFailed] = useState(false);
   const [autoCrop, setAutoCrop] = useState(true);
   const [locked, setLocked] = useState(false);
 
@@ -70,7 +71,7 @@ export function DocScanner({
         cvRef.current = cv;
         setCvReady(true);
       })
-      .catch(() => alive && setCvReady(false));
+      .catch(() => alive && setCvFailed(true));
     return () => {
       alive = false;
     };
@@ -214,11 +215,13 @@ export function DocScanner({
     onDone(shots.map((s) => ({ data: s.url.split(",")[1] ?? "", mimeType: "image/jpeg" })));
   }
 
-  const hint = !cvReady
-    ? "Preparing auto-crop…"
-    : locked
-      ? "Page locked — capture it"
-      : "Point the camera at the whole page";
+  const hint = cvFailed
+    ? "Auto-crop unavailable — tap to capture"
+    : !cvReady
+      ? "Preparing auto-crop…"
+      : locked
+        ? "Page locked — capture it"
+        : "Point the camera at the whole page";
 
   return (
     <div className="fixed inset-0 z-[95] flex flex-col bg-ink">
@@ -228,13 +231,14 @@ export function DocScanner({
           <button
             type="button"
             onClick={() => setAutoCrop((a) => !a)}
-            aria-pressed={autoCrop}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-              autoCrop ? "bg-lime text-lime-ink" : "bg-paper/15 text-paper"
+            disabled={cvFailed}
+            aria-pressed={autoCrop && !cvFailed}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+              autoCrop && !cvFailed ? "bg-lime text-lime-ink" : "bg-paper/15 text-paper"
             }`}
           >
             <CropIcon size={14} weight="bold" />
-            Auto-crop {autoCrop ? "on" : "off"}
+            Auto-crop {cvFailed ? "off" : autoCrop ? "on" : "off"}
           </button>
           <button
             type="button"

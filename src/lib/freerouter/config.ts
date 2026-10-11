@@ -18,9 +18,9 @@ export function hasKey(provider: Provider): boolean {
 }
 
 // Model chains, tried in order. Verified live against each provider's API
-// (Oct 2026) — older ids like llama-3.3-70b / gemini-2.0-flash are retired.
-// `gemini-flash-latest` is an alias that tracks the current Flash release so
-// we don't have to chase version bumps.
+// (Oct 2026) — older ids (llama-3.3-70b, gemini-2.0-flash, gemini-2.5-flash,
+// gemini-1.5-flash) are retired/unavailable for this key and 404. Gemini vision
+// + text now runs on gemini-3.5-flash with lite fallbacks (see llm.ts).
 // Audio -> text. Primary path translates straight to English (Groq's
 // /audio/translations, which only supports whisper-large-v3) so the stored
 // transcript is English whatever language the lecture was in. If translation
@@ -39,7 +39,7 @@ export const STT_CHAIN: {
 // drift as providers retire versions — if calls 404, update these to the
 // current free ids (Groq /models, OpenRouter models list, Gemini models list).
 export const NOTE_CHAIN: { provider: Provider; model: string }[] = [
-  { provider: "gemini", model: "gemini-2.0-flash" },
+  { provider: "gemini", model: "gemini-3.5-flash" },
   { provider: "groq", model: "llama-3.3-70b-versatile" },
   { provider: "groq", model: "openai/gpt-oss-120b" },
   { provider: "openrouter", model: "google/gemma-2-9b-it:free" },

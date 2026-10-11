@@ -273,13 +273,14 @@ export async function generateNote(transcript: string): Promise<NoteResult> {
   throw new AllProvidersFailedError("note generation", attempts);
 }
 
-// Gemini vision model ids are version-churny; try a few so a retired default
-// doesn't break scanning outright.
+// Gemini vision model ids are version-churny; try a few (verified live to
+// support generateContent with image/PDF input for this key) so a retired
+// default doesn't break scanning. gemini-2.0-flash / 2.5-flash / 1.5-flash are
+// gone (404); gemini-flash-latest is flaky under load, so it's not first.
 const VISION_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-2.5-flash",
-  "gemini-flash-latest",
-  "gemini-1.5-flash",
+  "gemini-3.5-flash",
+  "gemini-flash-lite-latest",
+  "gemini-2.5-flash-lite",
 ];
 
 export async function generateNoteFromMedia(
