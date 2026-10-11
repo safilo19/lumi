@@ -235,6 +235,75 @@ function sanitizeNote(raw: string): GeneratedNote {
   };
 }
 
+const ILLUSTRATION_PROMPT = `Create ONE self-contained SVG illustration that visually explains the example/concept for a study note.
+- Output ONLY the SVG markup, from <svg to </svg>. No markdown, no words before or after.
+- Use viewBox="0 0 400 300" and omit width/height so it scales.
+- Flat simple shapes, short labels and arrows. Palette: #5b4df6, #c6f24e, #ff6b5b, #241c33 on a light background.
+- NO <script>, no <foreignObject>, no external links or images.`;
+
+function sanitizeSvg(raw: string): string | null {
+  const start = raw.indexOf("<svg");
+  const end = raw.lastIndexOf("</svg>");
+  if (start === -1 || end === -1) return null;
+  let svg = raw.slice(start, end + 6);
+  svg = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
+  svg = svg.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "");
+  svg = svg.replace(/\son\w+="[^"]*"/gi, "");
+  svg = svg.replace(/javascript:/gi, "");
+  return svg.length > 30 ? svg : null;
+}
+
+async function generateIllustration(topic: string, context: string): Promise<string | null> {
+  // Two tries with a short gap — the SVG call fires right after the big note
+  // generation, so a free-tier rate-limit on the first attempt is common.
+  for (let t = 0; t < 2; t++) {
+    try {
+      const raw = await freeChat(
+        "You are an expert SVG illustrator for study notes.",
+        `${ILLUSTRATION_PROMPT}\n\nExample/topic: ${topic || "the lecture"}\n\nNotes:\n${context.slice(0, 6000)}`,
+        { json: false },
+      );
+      const svg = sanitizeSvg(raw);
+      if (svg) return svg;
+    } catch {
+      // try again
+    }
+    if (t === 0) await new Promise((r) => setTimeout(r, 1500));
+  }
+  return null;
+}
+
+// Auto-illustrate the first couple of worked examples so the method is visual,
+// not just text. Best-effort: a failed drawing is simply skipped.
+async function illustrateExamples(blocks: NoteBlock[], context: string): Promise<NoteBlock[]> {
+  const anchors: number[] = [];
+  for (let i = 0; i < blocks.length && anchors.length < 1; i++) {
+    const b = blocks[i];
+    if (b.kind === "callout" && b.tone === "example") anchors.push(i);
+  }
+  if (!anchors.length) return blocks;
+  const svgs = await Promise.all(
+    anchors.map((i) => {
+      const b = blocks[i];
+      const topic = b.kind === "callout" ? b.text.slice(0, 240) : "";
+      return generateIllustration(topic, context);
+    }),
+  );
+  const svgAt = new Map<number, string>();
+  anchors.forEach((i, k) => {
+    const svg = svgs[k];
+    if (svg) svgAt.set(i, svg);
+  });
+  if (!svgAt.size) return blocks;
+  const out: NoteBlock[] = [];
+  blocks.forEach((b, i) => {
+    out.push(b);
+    const svg = svgAt.get(i);
+    if (svg) out.push({ kind: "illustration", svg, caption: "Visual example" });
+  });
+  return out;
+}
+
 /**
  * Generate structured notes from a transcript through the LLM failover chain
  * (Gemini Flash → Groq gpt-oss → OpenRouter free). Returns the note plus the
@@ -259,6 +328,7 @@ export async function generateNote(transcript: string): Promise<NoteResult> {
           : await callOpenAICompat(provider, model, key, NOTE_SYSTEM_PROMPT, user);
 
       const note = sanitizeNote(raw);
+      note.blocks = await illustrateExamples(note.blocks, transcript);
       attempts.push({ provider, model, ok: true, ms: Date.now() - started });
       return { ...note, attempts, provider, model };
     } catch (err) {
@@ -325,6 +395,7 @@ export async function generateNoteFromMedia(
         .join("");
       if (!text) throw new Error("empty response");
       const note = sanitizeNote(text);
+      note.blocks = await illustrateExamples(note.blocks, "");
       attempts.push({ provider: "gemini", model, ok: true, ms: Date.now() - started });
       return { ...note, attempts, provider: "gemini", model };
     } catch (err) {

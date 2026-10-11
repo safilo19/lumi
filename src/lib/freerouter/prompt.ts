@@ -40,18 +40,28 @@ EACH Block IS EXACTLY ONE OF:
   { "kind": "formula",   "label": string, "expr": string }
       // expr is a LaTeX math expression WITHOUT surrounding $, e.g. "T_{turnaround} = T_{completion} - T_{arrival}"
   { "kind": "diagram",   "caption": string, "nodes": string[] }
-      // a SIMPLE linear pipeline or cycle: 2-5 short ordered labels
+      // an ordered pipeline/cycle: 3-6 labels, each a real step (not a heading)
   { "kind": "flowchart", "caption": string, "steps": Step[] }
-      // use when a PROCESS has decisions / branching
+      // a REAL process. Each step's text EXPLAINS what happens and includes concrete
+      // example values when the lecturer gave them (e.g. "Compute waiting time: P1 = 0").
+      // Use decision steps with Yes/No branches. 4-10 steps. Never just list headings.
   { "kind": "mindmap",   "center": string, "branches": Branch[] }
-      // use to show how 2-5 subtopics relate to one central concept
+      // a COMPLETE end-to-end map of the topic: center = the topic itself, 4-8
+      // branches = its major aspects, each branch's children = the actual sub-points,
+      // definitions or examples (not just section titles). Must stand alone.
   { "kind": "glossary",  "items": { "term": string, "definition": string }[] }
       // a revision list of the key terms, collected at the END
 
 Step = { "text": string, "type": "start" | "process" | "decision" | "io" | "end", "branches"?: { "label": string, "text": string }[] }
   // Give branches ONLY on a "decision" step, e.g. [{"label":"Yes","text":"..."},{"label":"No","text":"..."}].
 Branch = { "label": string, "children": string[] }
-  // label is the subtopic; children are 1-4 short related points.
+  // label is the subtopic; children are 2-5 real sub-points, definitions or example values — concise phrases, not full paragraphs.
+
+MATH, PROBLEMS & EXAMPLES (critical)
+- Reproduce ALL mathematics faithfully. Put every equation, expression, derivation step and problem statement in a "formula" block with correct LaTeX (no surrounding $), and explain each symbol in a nearby paragraph.
+- For scanned or photographed notes/slides, transcribe the math EXACTLY as written — keep the exact formulas and forms; do not simplify or skip steps.
+- Capture EVERY question/problem shown and EVERY example the teacher works. For each worked example: open with an "example" callout, then give the FULL step-by-step solution (each step as a short paragraph and/or a "formula" block). Never say "see the example" without reproducing it in full.
+- For examples and processes, also add a "flowchart", "diagram" or "illustration" so the method is visual, not only text.
 
 HOW TO BUILD GREAT LUMI NOTES
 - Start with exactly ONE "summary" block (the big idea of the whole lecture).

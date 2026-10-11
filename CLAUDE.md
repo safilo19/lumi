@@ -120,9 +120,12 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Exhaustive notes: `NOTE_SYSTEM_PROMPT` rewritten to cover EVERY detail
-  (student's only study material; no block cap, 30-60+, a visual per section); `MAX_TOKENS` 4096→8192. Tested: 47 blocks.
-
+- 2026-10-11 — Exhaustive, high-detail notes (`NOTE_SYSTEM_PROMPT`, `MAX_TOKENS` 8192):
+  cover EVERY detail, no block cap (30-60+). Math → LaTeX `formula` blocks + every teacher
+  example reproduced step by step; mindmaps/flowcharts end-to-end (explanations/example values,
+  not heading links); `generateNote`/`generateNoteFromMedia` auto-add 1 best-effort SVG
+  `illustration` for the first worked example (`illustrateExamples` + `generateIllustration`/
+  `sanitizeSvg` in `llm.ts`, retry once). Live-tested: 42-47 blocks with formulas + illustration.
 - 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic; all 8
   tools). A: Fraunces serif, editorial CSS (`.note-dropcap`/`.editorial-rule`/
   `.note-aurora`/`.reader-serif`), `note-masthead.tsx`, `reading-progress.tsx`,
@@ -194,8 +197,5 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   `Block` from `note-blocks.tsx`. Keeps the structured block model (flashcards/
   quiz/search still work). Landing `note-preview.tsx` refreshed to handwriting.
   Build (clean), lint, tsc green.
-- 2026-10-11 — Media + AI visuals (`image`/`illustration` blocks; editor "Add with
-  AI and media" → `/api/visual` + `/api/photo`; `FigureFrame` fullscreen; `blocksToText`).
-- 2026-10-11 — Export overhaul: `ExportDialog` PDF(print)/PNG(`html-to-image`)/docx + paper
-  styles via `[data-paper]`; `.lumi-mark` highlighter; `NoteToolbar` Edit + Export.
-  tsc green.
+- 2026-10-11 — Media + AI visuals (`image`/`illustration` blocks; editor AI panel → `/api/visual` + `/api/photo`; `FigureFrame`).
+- 2026-10-11 — Export: `ExportDialog` PDF/PNG/docx + `[data-paper]` paper styles; `.lumi-mark` highlighter.
