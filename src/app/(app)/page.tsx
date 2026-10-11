@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
 import { useNotes } from "@/lib/local/use-notes";
 import { useCourses } from "@/lib/local/use-courses";
+import { useStreak } from "@/lib/local/streak";
 import { cn } from "@/lib/utils";
 
 const courseTints = [
@@ -24,6 +25,7 @@ const courseTints = [
 export default function DashboardPage() {
   const { data: recent } = useNotes();
   const { data: courses } = useCourses();
+  const streak = useStreak();
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -33,7 +35,7 @@ export default function DashboardPage() {
         </h1>
         <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-coral-weak-ink/15 bg-coral-weak px-3.5 py-1.5 font-display text-sm font-semibold text-coral-weak-ink">
           <FireIcon size={16} weight="fill" />
-          4-day streak
+          {streak > 0 ? `${streak}-day streak` : "Start your streak"}
         </span>
       </div>
 

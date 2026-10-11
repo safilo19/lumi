@@ -9,7 +9,7 @@ import { type Note, type NoteBlock } from "@/lib/mock-data";
 const DB_NAME = "lumi";
 const DB_VERSION = 5;
 const NOTES = "notes";
-const META = "meta";
+export const META = "meta";
 export const CARDS = "cards";
 export const COURSES = "courses";
 export const HIGHLIGHTS = "highlights";

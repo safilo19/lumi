@@ -125,6 +125,10 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Real study streak: `lib/local/streak.ts` (`useStreak` marks today
+  active in the `meta` store, counts consecutive days); dashboard badge now live
+  (was a hardcoded "4-day streak"). Exported `META` from `notes.ts`.
+
 - 2026-10-11 — Study-suite batch (9 features; DB → v5). Difficulty levels
   (`/api/level` + Level menu in `note-reader`), Audio recap (`/api/recap` → read
   aloud), Attach slides/PDF (`note-attachments.tsx` + `attachments` store),
@@ -170,19 +174,12 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 - 2026-10-11 — User courses + delete/undo (pushed `aa5d698`): student-created
   courses (`courses` store), delete-with-confirm-and-undo via `overlays.tsx`
   (`confirmAction` + `showUndo`); `mock-data.ts` types-only, lookups via `useCourses`.
-- 2026-10-11 — Android APK fixed (pushed `c67ffd9`): TWA build was failing on
-  minSdk 21 vs androidbrowserhelper's required 24 → bumped `twa-manifest.json`
-  minSdk to 24; rebuilt via GH Actions and replaced the stale `lumi.apk` on the
-  v0.1.10 release.
-- 2026-10-11 — PWA service worker hardening (`scripts/gen-sw.mjs`): navigation
-  fetch is now network-first with a 4s AbortController timeout so a stalled
-  launch request can't hang the installed app on a white screen; offline page
-  gained a "Try again" reload button. `public/sw.js` is generated on build.
-- 2026-10-11 — Draggable diagram canvas (committed `7099816`, pushed): diagram/flowchart/
-  mindmap blocks now render in `diagram-canvas.tsx` via `@xyflow/react` — nodes
-  are draggable, the canvas pans/zooms (Controls + fit view) with a fullscreen
-  toggle; replaced the old static SVG renderers (removed DiagramFlow/Flowchart/
-  Mindmap + helpers from `note-blocks.tsx`). Build (clean), lint, tsc green.
+- 2026-10-11 — Android APK fixed (pushed `c67ffd9`): bumped `twa-manifest.json`
+  minSdk 21→24 (androidbrowserhelper needs 24); rebuilt, replaced `lumi.apk`.
+- 2026-10-11 — PWA SW hardening (`scripts/gen-sw.mjs`): network-first nav with a
+  4s timeout so a stalled launch can't white-screen; offline "Try again" button.
+- 2026-10-11 — Draggable diagram canvas (pushed `7099816`): diagram/flowchart/
+  mindmap render in `diagram-canvas.tsx` via `@xyflow/react` (drag, pan/zoom, fullscreen).
 - 2026-10-11 — Font/ask/diagram pass (committed `e148cbd`, not pushed): handwriting (Caveat) now
   only on headings + titles; note body reverted to clean sans. Ask-your-notes is
   embedded in every note (`ask-note.tsx`), standalone `/ask` route + nav removed;
