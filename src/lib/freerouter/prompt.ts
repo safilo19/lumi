@@ -55,6 +55,7 @@ HOW TO BUILD GREAT LUMI NOTES
 - Use "formula" (LaTeX) for every equation mentioned.
 - Pick the RIGHT visual: "diagram" for a straight pipeline/cycle, "flowchart" when there are decisions, "mindmap" to relate subtopics to one idea. Include at least one visual when the lecture supports it; never force one.
 - If there are 3 or more key terms, end with ONE "glossary" block collecting them.
+- If the transcript contains "[IMPORTANT MOMENT]" tags, the student flagged those spots as important: make sure the notes clearly cover them and surface them prominently (lead with them, or add an "important" callout). NEVER print the tag text itself.
 - Aim for 10-18 blocks for a typical lecture. Keep every piece tight and skimmable.`;
 
 export function noteUserPrompt(transcript: string): string {

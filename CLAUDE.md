@@ -118,7 +118,16 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — User courses + delete/undo (not committed): removed the 3
+- 2026-10-11 — Record screen overhaul (not committed): real-time canvas
+  visualizer `components/app/orbital-bloom.tsx` (Web Audio AnalyserNode →
+  concentric rings + rotating frequency petals) behind the record button;
+  Pause/Resume (MediaRecorder, feature-detected), "Mark moment" bookmarks,
+  mic-level silence alert, screen Wake Lock, and an experimental live transcript
+  (webkit SpeechRecognition, hidden if unsupported). Markers flow to
+  `/api/notes/create`: STT now requests `verbose_json` (segments in
+  `TranscriptResult`), the route tags flagged segments `[IMPORTANT MOMENT]`, and
+  `NOTE_SYSTEM_PROMPT` tells the model to emphasise them.
+- 2026-10-11 — User courses + delete/undo (pushed `aa5d698`): removed the 3
   hardcoded default courses; courses are now student-created in IndexedDB
   (`courses` store, DB v3) via `/courses` (create form + delete). Delete-with-
   confirm-and-undo for notes (note toolbar) and courses via `overlays.tsx`

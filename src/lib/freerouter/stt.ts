@@ -32,7 +32,9 @@ export async function transcribeAudio(
       const form = new FormData();
       form.append("file", input.audio, filename);
       form.append("model", model);
-      form.append("response_format", "json");
+      // verbose_json gives per-segment timestamps, used to line up the
+      // student's "important moment" markers with the transcript.
+      form.append("response_format", "verbose_json");
       // translate -> English out (the API ignores `language`). transcribe ->
       // verbatim, so forward the language hint if the caller set one.
       if (mode === "transcribe" && input.language) {
@@ -56,12 +58,25 @@ export async function transcribeAudio(
         throw new Error(`HTTP ${res.status}: ${body.slice(0, 180)}`);
       }
 
-      const data = (await res.json()) as { text?: string };
+      const data = (await res.json()) as {
+        text?: string;
+        segments?: { start?: number; end?: number; text?: string }[];
+      };
       const text = (data.text ?? "").trim();
       if (!text) throw new Error("empty transcript");
 
+      const segments = Array.isArray(data.segments)
+        ? data.segments
+            .filter((s) => typeof s.text === "string")
+            .map((s) => ({
+              start: Number(s.start) || 0,
+              end: Number(s.end) || 0,
+              text: String(s.text).trim(),
+            }))
+        : undefined;
+
       attempts.push({ provider, model, ok: true, ms: Date.now() - started });
-      return { text, attempts, provider, model };
+      return { text, segments, attempts, provider, model };
     } catch (err) {
       attempts.push({
         provider,

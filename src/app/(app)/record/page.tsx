@@ -5,7 +5,11 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
   MicrophoneIcon,
+  MicrophoneSlashIcon,
   StopIcon,
+  PauseIcon,
+  PlayIcon,
+  BookmarkSimpleIcon,
   CheckCircleIcon,
   WarningCircleIcon,
   WaveformIcon,
@@ -15,14 +19,13 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteBlocks } from "@/components/app/note-blocks";
+import { OrbitalBloom } from "@/components/app/orbital-bloom";
 import { type Note, type NoteBlock } from "@/lib/mock-data";
 import { createNote } from "@/lib/local/notes";
 import { useCourses } from "@/lib/local/use-courses";
 
 type Phase = "idle" | "recording" | "processing" | "done" | "error";
 
-// What /api/notes/create returns: a generated note, not yet persisted. The id,
-// recordedAt, and lecturer are assigned locally when we save it to IndexedDB.
 type GeneratedNote = {
   title: string;
   courseId: string;
@@ -31,16 +34,34 @@ type GeneratedNote = {
   durationMin: number;
 };
 
+type SREvent = {
+  resultIndex: number;
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
+};
+type SR = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((e: SREvent) => void) | null;
+  onend: (() => void) | null;
+};
+function getSR(): (new () => SR) | undefined {
+  if (typeof window === "undefined") return undefined;
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SR;
+    webkitSpeechRecognition?: new () => SR;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+}
+
 function formatTime(s: number) {
-  const m = Math.floor(s / 60)
-    .toString()
-    .padStart(2, "0");
+  const m = Math.floor(s / 60).toString().padStart(2, "0");
   const sec = (s % 60).toString().padStart(2, "0");
   return `${m}:${sec}`;
 }
 
-// MediaRecorder's supported container varies by browser. Pick the first the
-// platform can actually produce so the blob and its filename stay honest.
 function pickMime(): { mimeType: string; ext: string } {
   const candidates: Array<[string, string]> = [
     ["audio/webm;codecs=opus", "webm"],
@@ -55,85 +76,198 @@ function pickMime(): { mimeType: string; ext: string } {
   }
   return { mimeType: "", ext: "webm" };
 }
+
 export default function RecordPage() {
   const reduce = useReducedMotion();
   const { data: courses } = useCourses();
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [courseId, setCourseId] = useState("");
   const [note, setNote] = useState<Note | null>(null);
   const [error, setError] = useState("");
+  const [markers, setMarkers] = useState<number[]>([]);
+  const [liveText, setLiveText] = useState("");
+  const [silent, setSilent] = useState(false);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const activeCourseId = courseId || courses[0]?.id || "";
 
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const startedAtRef = useRef<number>(0);
-  const mimeRef = useRef<{ mimeType: string; ext: string }>({
-    mimeType: "",
-    ext: "webm",
-  });
+  const startedAtRef = useRef(0);
+  const mimeRef = useRef({ mimeType: "", ext: "webm" });
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
+  const recognitionRef = useRef<SR | null>(null);
+  const restartRecRef = useRef(false);
+  const finalTextRef = useRef("");
+  const levelRef = useRef(0);
+  const silenceRef = useRef(0);
+  const secondsRef = useRef(0);
+  const markersRef = useRef<number[]>([]);
+  const pauseSupported =
+    typeof MediaRecorder !== "undefined" &&
+    typeof MediaRecorder.prototype.pause === "function";
 
-  // Tick the on-screen timer while recording.
-  useEffect(() => {
-    if (phase === "recording") {
-      timer.current = setInterval(() => setSeconds((s) => s + 1), 1000);
-    }
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [phase]);
-
-  // Release the mic if the user navigates away mid-capture.
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
+  const onLevel = useCallback((l: number) => {
+    levelRef.current = l;
   }, []);
 
-  const upload = useCallback(
-    async (blob: Blob) => {
-      setPhase("processing");
-      try {
-        const form = new FormData();
-        form.append("audio", blob, `lecture.${mimeRef.current.ext}`);
-        form.append("courseId", activeCourseId);
-        const elapsed = startedAtRef.current
-          ? Math.round((Date.now() - startedAtRef.current) / 1000)
-          : 0;
-        form.append("durationSec", String(elapsed));
-        const res = await fetch("/api/notes/create", {
-          method: "POST",
-          body: form,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
-        // The route generates only; persist the note to this device's local
-        // store, then hold the saved copy (now with an id) for the result view.
-        const generated = data.note as GeneratedNote;
-        const saved = await createNote({
-          title: generated.title,
-          courseId: generated.courseId,
-          language: generated.language,
-          blocks: generated.blocks,
-          durationMin: generated.durationMin,
-        });
-        setNote(saved);
-        setPhase("done");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong.");
-        setPhase("error");
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLockRef.current = await (
+          navigator as Navigator & {
+            wakeLock: {
+              request: (t: "screen") => Promise<{ release: () => Promise<void> }>;
+            };
+          }
+        ).wakeLock.request("screen");
       }
-    },
-    [activeCourseId],
-  );
-  const start = useCallback(async () => {
+    } catch {}
+  }
+  function releaseWakeLock() {
+    void wakeLockRef.current?.release().catch(() => {});
+    wakeLockRef.current = null;
+  }
+
+  function startRecognition() {
+    const SRClass = getSR();
+    if (!SRClass) return;
+    try {
+      const rec = recognitionRef.current ?? new SRClass();
+      rec.lang = "en-US";
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.onresult = (e) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) finalTextRef.current += `${r[0].transcript} `;
+          else interim += r[0].transcript;
+        }
+        setLiveText((finalTextRef.current + interim).slice(-700));
+      };
+      rec.onend = () => {
+        if (restartRecRef.current) {
+          try {
+            rec.start();
+          } catch {}
+        }
+      };
+      recognitionRef.current = rec;
+      restartRecRef.current = true;
+      rec.start();
+    } catch {}
+  }
+  function stopRecognition() {
+    restartRecRef.current = false;
+    try {
+      recognitionRef.current?.stop();
+    } catch {}
+  }
+
+  function teardown() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    void audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    setAnalyser(null);
+    releaseWakeLock();
+    stopRecognition();
+  }
+
+  async function upload(blob: Blob) {
+    setPhase("processing");
+    try {
+      const form = new FormData();
+      form.append("audio", blob, `lecture.${mimeRef.current.ext}`);
+      form.append("courseId", activeCourseId);
+      form.append("durationSec", String(secondsRef.current));
+      form.append("markers", JSON.stringify(markersRef.current));
+      const res = await fetch("/api/notes/create", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+      const generated = data.note as GeneratedNote;
+      const saved = await createNote({
+        title: generated.title,
+        courseId: generated.courseId,
+        language: generated.language,
+        blocks: generated.blocks,
+        durationMin: generated.durationMin,
+      });
+      setNote(saved);
+      setPhase("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setPhase("error");
+    }
+  }
+
+  function pauseRec() {
+    try {
+      recorderRef.current?.pause();
+    } catch {}
+    setPaused(true);
+    stopRecognition();
+  }
+  function resumeRec() {
+    try {
+      recorderRef.current?.resume();
+    } catch {}
+    setPaused(false);
+    void requestWakeLock();
+    startRecognition();
+  }
+  function stop() {
+    try {
+      recorderRef.current?.stop();
+    } catch {}
+  }
+  function mark() {
+    const at = secondsRef.current;
+    markersRef.current = [...markersRef.current, at];
+    setMarkers((m) => [...m, at]);
+  }
+  function reset() {
+    setPhase("idle");
+    setSeconds(0);
+    secondsRef.current = 0;
+    setNote(null);
+    setError("");
+    setMarkers([]);
+    markersRef.current = [];
+    setLiveText("");
+    finalTextRef.current = "";
+    setSilent(false);
+  }
+
+  async function start() {
     setError("");
     setNote(null);
+    setMarkers([]);
+    markersRef.current = [];
+    setLiveText("");
+    finalTextRef.current = "";
+    setSilent(false);
+    silenceRef.current = 0;
+    levelRef.current = 0;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      const ctx = new Ctx();
+      audioCtxRef.current = ctx;
+      const src = ctx.createMediaStreamSource(stream);
+      const an = ctx.createAnalyser();
+      an.fftSize = 256;
+      src.connect(an);
+      setAnalyser(an);
       const mime = pickMime();
       mimeRef.current = mime;
       const recorder = new MediaRecorder(
@@ -145,38 +279,90 @@ export default function RecordPage() {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = () => {
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
         const blob = new Blob(chunksRef.current, {
           type: mime.mimeType || "audio/webm",
         });
+        teardown();
         void upload(blob);
       };
       recorderRef.current = recorder;
       recorder.start();
       startedAtRef.current = Date.now();
       setSeconds(0);
+      secondsRef.current = 0;
+      setPaused(false);
       setPhase("recording");
+      void requestWakeLock();
+      startRecognition();
     } catch {
       setError(
         "We could not reach your microphone. Check the browser permission and try again.",
       );
       setPhase("error");
+      teardown();
     }
-  }, [upload]);
+  }
 
-  const stop = useCallback(() => {
-    recorderRef.current?.stop();
+  useEffect(() => {
+    if (phase === "recording" && !paused) {
+      timer.current = setInterval(() => {
+        setSeconds((s) => {
+          secondsRef.current = s + 1;
+          return s + 1;
+        });
+        if (levelRef.current < 0.025) {
+          silenceRef.current += 1;
+          if (silenceRef.current >= 6) setSilent(true);
+        } else {
+          silenceRef.current = 0;
+          setSilent(false);
+        }
+      }, 1000);
+    }
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [phase, paused]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (
+        document.visibilityState === "visible" &&
+        phase === "recording" &&
+        !paused &&
+        !wakeLockRef.current &&
+        "wakeLock" in navigator
+      ) {
+        void (
+          navigator as Navigator & {
+            wakeLock: {
+              request: (t: "screen") => Promise<{ release: () => Promise<void> }>;
+            };
+          }
+        ).wakeLock
+          .request("screen")
+          .then((s) => {
+            wakeLockRef.current = s;
+          })
+          .catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [phase, paused]);
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      void audioCtxRef.current?.close().catch(() => {});
+      restartRecRef.current = false;
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+      void wakeLockRef.current?.release().catch(() => {});
+    };
   }, []);
 
-  const reset = useCallback(() => {
-    setPhase("idle");
-    setSeconds(0);
-    setNote(null);
-    setError("");
-  }, []);
-  // Done: the note is already saved to this device's local library; show it in
-  // place with a link through to its permanent page.
   if (phase === "done" && note) {
     const course = courses.find((c) => c.id === note.courseId);
     return (
@@ -185,7 +371,6 @@ export default function RecordPage() {
           <CheckCircleIcon size={18} weight="fill" />
           Note ready — transcribed and woven from your recording.
         </div>
-
         <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             {course && (
@@ -206,10 +391,8 @@ export default function RecordPage() {
             Record another
           </Button>
         </div>
-
         <hr className="my-8 border-line" />
         <NoteBlocks blocks={note.blocks} />
-
         <div className="mt-10 flex justify-center">
           <Link href={`/notes/${note.id}`}>
             <Button size="lg">
@@ -218,12 +401,11 @@ export default function RecordPage() {
             </Button>
           </Link>
         </div>
-        <p className="mt-4 text-center text-sm text-ink-faint">
-          Saved to your library — find it anytime under this course.
-        </p>
       </div>
     );
   }
+
+  const recording = phase === "recording";
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center pt-6 text-center">
       <h1 className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
@@ -231,9 +413,11 @@ export default function RecordPage() {
       </h1>
       <p className="mt-2 max-w-sm text-ink-soft">
         {phase === "idle" &&
-          "Pick the course, press record, and set your phone down. We will take it from there."}
-        {phase === "recording" &&
-          "Recording in progress. Leave this running through the class."}
+          "Pick a course, press record, and set your phone down. Lumi takes it from there."}
+        {recording &&
+          (paused
+            ? "Paused — resume when you're ready."
+            : "Recording. Tap the star to flag anything important.")}
         {phase === "processing" && "Transcribing the audio and weaving your note."}
         {phase === "error" && error}
       </p>
@@ -270,100 +454,114 @@ export default function RecordPage() {
         </div>
       )}
 
-      <div className="mt-10 flex flex-col items-center">
-        {phase === "recording" && (
-          <div className="mb-8 flex h-14 items-end gap-1.5" aria-hidden>
-            {Array.from({ length: 28 }).map((_, i) => (
-              <motion.span
-                key={i}
-                className={
-                  i % 2
-                    ? "w-1.5 rounded-full bg-lime-deep"
-                    : "w-1.5 rounded-full bg-accent"
-                }
-                animate={
-                  reduce ? { height: 10 } : { height: [8, 14 + ((i * 7) % 30), 8] }
-                }
-                transition={{
-                  duration: 0.9 + (i % 5) * 0.12,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {(phase === "idle" || phase === "recording") && (
-          <>
-            <div className="relative flex h-28 w-28 items-center justify-center">
-              {phase === "recording" && !reduce && (
-                <>
-                  <motion.span
-                    className="absolute h-28 w-28 rounded-full border-4 border-coral"
-                    animate={{ scale: [1, 1.65], opacity: [0.5, 0] }}
-                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-                    aria-hidden
-                  />
-                  <motion.span
-                    className="absolute h-28 w-28 rounded-full border-4 border-coral"
-                    animate={{ scale: [1, 1.65], opacity: [0.5, 0] }}
-                    transition={{
-                      duration: 1.6,
-                      repeat: Infinity,
-                      ease: "easeOut",
-                      delay: 0.8,
-                    }}
-                    aria-hidden
-                  />
-                </>
-              )}
-              <button
-                onClick={phase === "idle" ? start : stop}
-                className={
-                  phase === "recording"
-                    ? "relative flex h-28 w-28 items-center justify-center rounded-full bg-coral text-coral-ink shadow-[0_8px_0_var(--coral-deep)] transition-transform active:translate-y-[4px] active:shadow-[0_4px_0_var(--coral-deep)]"
-                    : "relative flex h-28 w-28 items-center justify-center rounded-full bg-accent text-accent-ink shadow-[0_8px_0_var(--accent-deep)] transition-transform hover:-translate-y-0.5 active:translate-y-[4px] active:shadow-[0_4px_0_var(--accent-deep)]"
-                }
-                aria-label={phase === "idle" ? "Start recording" : "Stop recording"}
-              >
-                {phase === "recording" ? (
-                  <StopIcon size={34} weight="fill" />
-                ) : (
-                  <MicrophoneIcon size={38} weight="fill" />
-                )}
-              </button>
-            </div>
-            <div className="mt-7 font-display text-5xl font-semibold tabular-nums text-ink">
-              {formatTime(seconds)}
-            </div>
-          </>
-        )}
-        {phase === "processing" && (
-          <div className="flex flex-col items-center">
-            <motion.div
-              className="flex h-24 w-24 items-center justify-center rounded-full bg-accent-weak text-accent-weak-ink"
-              animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+      {(phase === "idle" || recording) && (
+        <div className="mt-6 flex w-full flex-col items-center">
+          <div className="relative flex h-[300px] w-[300px] items-center justify-center">
+            <OrbitalBloom
+              analyser={analyser}
+              active={recording && !paused}
+              reduce={!!reduce}
+              onLevel={onLevel}
+            />
+            <button
+              onClick={phase === "idle" ? start : stop}
+              aria-label={phase === "idle" ? "Start recording" : "Stop recording"}
+              className={
+                recording
+                  ? "relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-coral text-coral-ink shadow-[0_8px_0_var(--coral-deep)] transition-transform active:translate-y-[4px] active:shadow-[0_4px_0_var(--coral-deep)]"
+                  : "relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-accent text-accent-ink shadow-[0_8px_0_var(--accent-deep)] transition-transform hover:-translate-y-0.5 active:translate-y-[4px] active:shadow-[0_4px_0_var(--accent-deep)]"
+              }
             >
-              <WaveformIcon size={34} weight="duotone" />
-            </motion.div>
-            <div className="mt-5 text-sm text-ink-soft">Working on it…</div>
+              {recording ? (
+                <StopIcon size={34} weight="fill" />
+              ) : (
+                <MicrophoneIcon size={38} weight="fill" />
+              )}
+            </button>
           </div>
-        )}
 
-        {phase === "error" && (
-          <div className="flex flex-col items-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-coral-weak text-coral-ink">
-              <WarningCircleIcon size={44} weight="fill" />
-            </div>
-            <Button variant="secondary" onClick={reset} className="mt-8">
-              <ArrowCounterClockwiseIcon size={16} weight="bold" />
-              Try again
-            </Button>
+          <div className="mt-2 font-display text-5xl font-semibold tabular-nums text-ink">
+            {formatTime(seconds)}
           </div>
-        )}
-      </div>
+
+          {recording && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              {pauseSupported && (
+                <Button
+                  variant="secondary"
+                  onClick={paused ? resumeRec : pauseRec}
+                >
+                  {paused ? (
+                    <PlayIcon size={16} weight="fill" />
+                  ) : (
+                    <PauseIcon size={16} weight="fill" />
+                  )}
+                  {paused ? "Resume" : "Pause"}
+                </Button>
+              )}
+              <Button variant="lime" onClick={mark}>
+                <BookmarkSimpleIcon size={16} weight="fill" />
+                Mark moment{markers.length ? ` (${markers.length})` : ""}
+              </Button>
+            </div>
+          )}
+
+          {recording && silent && (
+            <div className="mt-5 flex items-center gap-2 rounded-full border-2 border-coral/40 bg-coral-weak px-4 py-2 text-sm font-bold text-coral-weak-ink">
+              <MicrophoneSlashIcon size={16} weight="fill" />
+              We can&apos;t hear much — check the mic isn&apos;t covered or muted.
+            </div>
+          )}
+
+          {recording && markers.length > 0 && (
+            <div className="mt-4 flex max-w-md flex-wrap justify-center gap-1.5">
+              {markers.map((m, i) => (
+                <span
+                  key={i}
+                  className="rounded-full bg-lime-weak px-2.5 py-1 font-mono text-xs font-bold text-lime-ink"
+                >
+                  {formatTime(m)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {recording && liveText && (
+            <div className="mt-6 w-full max-w-md rounded-[var(--radius-card)] border-2 border-line bg-surface p-4 text-left">
+              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-faint">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-coral" />
+                Live transcript (rough)
+              </div>
+              <p className="text-sm leading-relaxed text-ink-soft">{liveText}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {phase === "processing" && (
+        <div className="mt-10 flex flex-col items-center">
+          <motion.div
+            className="flex h-24 w-24 items-center justify-center rounded-full bg-accent-weak text-accent-weak-ink"
+            animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <WaveformIcon size={34} weight="duotone" />
+          </motion.div>
+          <div className="mt-5 text-sm text-ink-soft">Working on it…</div>
+        </div>
+      )}
+
+      {phase === "error" && (
+        <div className="mt-10 flex flex-col items-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-coral-weak text-coral-ink">
+            <WarningCircleIcon size={44} weight="fill" />
+          </div>
+          <Button variant="secondary" onClick={reset} className="mt-8">
+            <ArrowCounterClockwiseIcon size={16} weight="bold" />
+            Try again
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

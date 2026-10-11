@@ -16,6 +16,7 @@ export type Attempt = {
 
 export type TranscriptResult = {
   text: string;
+  segments?: { start: number; end: number; text: string }[];
   attempts: Attempt[];
   provider: Provider;
   model: string;

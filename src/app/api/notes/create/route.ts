@@ -20,6 +20,35 @@ function normalizeLanguage(raw: string): Note["language"] {
   return "Mixed";
 }
 
+// Tag the transcript segments the student flagged as important so the note
+// model can emphasise them. Needs per-segment timestamps from STT; without
+// them (or without markers) the plain transcript is returned unchanged.
+function annotateTranscript(
+  text: string,
+  segments: { start: number; end: number; text: string }[] | undefined,
+  markers: number[],
+): string {
+  if (!segments?.length || !markers.length) return text;
+  const flagged = new Set<number>();
+  for (const m of markers) {
+    let best = -1;
+    let bestD = Infinity;
+    segments.forEach((s, i) => {
+      const d = m >= s.start && m <= s.end
+        ? 0
+        : Math.min(Math.abs(m - s.start), Math.abs(m - s.end));
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    });
+    if (best >= 0) flagged.add(best);
+  }
+  return segments
+    .map((s, i) => (flagged.has(i) ? `[IMPORTANT MOMENT] ${s.text}` : s.text))
+    .join(" ");
+}
+
 /**
  * POST /api/notes/create
  * multipart/form-data: audio=<file>, courseId=<string?>, language=<string?>
@@ -58,12 +87,24 @@ export async function POST(request: Request) {
   const durationRaw = form.get("durationSec");
   const durationSec =
     typeof durationRaw === "string" ? Number.parseInt(durationRaw, 10) : NaN;
+  let markers: number[] = [];
+  const markersRaw = form.get("markers");
+  if (typeof markersRaw === "string") {
+    try {
+      const parsed = JSON.parse(markersRaw);
+      if (Array.isArray(parsed)) {
+        markers = parsed.filter((x) => typeof x === "number" && isFinite(x));
+      }
+    } catch {}
+  }
   const filename =
     audio instanceof File && audio.name ? audio.name : "lecture.webm";
 
   try {
     const transcript = await transcribeAudio({ audio, filename, language });
-    const note = await generateNote(transcript.text);
+    const note = await generateNote(
+      annotateTranscript(transcript.text, transcript.segments, markers),
+    );
 
     return NextResponse.json({
       note: {
