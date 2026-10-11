@@ -118,14 +118,14 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Scanner reworked to be instant (pushed): removed the OpenCV.js
-  auto-crop entirely — the 10MB wasm made the camera hang on "Preparing" and
-  wasn't quick like other apps. `doc-scanner.tsx` is now dependency-free: live
-  camera + alignment frame, instant multi-page capture, fast grayscale/contrast
-  enhance; the AI reads the photographed pages server-side. Deleted
-  `src/lib/scan/opencv.ts` + `public/vendor/opencv.js`. Gemini 404 fix retained:
-  NOTE_CHAIN gemini = `gemini-3.5-flash`; VISION_MODELS = `gemini-3.5-flash` /
-  `gemini-flash-lite-latest` / `gemini-2.5-flash-lite` (verified live; PDF 200).
+- 2026-10-11 — Scanner: instant + lightweight auto-crop + autofocus (pushed): no
+  OpenCV (the 10MB wasm hung on "Preparing"). `doc-scanner.tsx` is dependency-free —
+  live camera + alignment frame, instant multi-page capture, grayscale/contrast
+  enhance; the AI reads pages server-side. Lightweight crop `src/lib/scan/crop.ts`
+  (pure-canvas page bounding-box, runs in ms, returns null→full frame if unsure;
+  Auto-crop toggle, default on). Camera requests continuous autofocus
+  (`applyContinuousFocus`, feature-detected) + 1920x1080 for sharpness. Gemini 404
+  fix kept: NOTE_CHAIN/VISION use `gemini-3.5-flash` + lite fallbacks (PDF 200).
 - 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
   Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
   or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`

@@ -1,8 +1,26 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { CameraIcon, CheckIcon, XIcon, TrashSimpleIcon } from "@phosphor-icons/react";
+import { CameraIcon, CheckIcon, XIcon, TrashSimpleIcon, CropIcon } from "@phosphor-icons/react";
+import { detectPageBox, cropToDataUrl } from "@/lib/scan/crop";
 
 type Shot = { url: string };
+
+// Ask the camera for continuous autofocus so pages come out sharp. focusMode is
+// a non-standard constraint (Android Chrome), so this is feature-detected and
+// safely ignored where unsupported.
+function applyContinuousFocus(track?: MediaStreamTrack) {
+  if (!track) return;
+  try {
+    const caps = track.getCapabilities?.() as { focusMode?: string[] } | undefined;
+    if (caps?.focusMode?.includes("continuous")) {
+      void track.applyConstraints({
+        advanced: [{ focusMode: "continuous" }],
+      } as unknown as MediaTrackConstraints);
+    }
+  } catch {
+    // focus control unsupported — ignore
+  }
+}
 
 // Fast, no-dependency document scanner: live camera with an alignment frame,
 // instant multi-page capture, a quick "scanned paper" enhance (grayscale +
@@ -19,6 +37,7 @@ export function DocScanner({
   const streamRef = useRef<MediaStream | null>(null);
   const [shots, setShots] = useState<Shot[]>([]);
   const [ready, setReady] = useState(false);
+  const [autoCrop, setAutoCrop] = useState(true);
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -26,11 +45,16 @@ export function DocScanner({
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         });
         if (cancelled) return stream.getTracks().forEach((t) => t.stop());
         streamRef.current = stream;
+        applyContinuousFocus(stream.getVideoTracks()[0]);
         const v = videoRef.current;
         if (v) {
           v.srcObject = stream;
@@ -61,7 +85,13 @@ export function DocScanner({
     if (!ctx) return;
     ctx.filter = "grayscale(1) contrast(1.4) brightness(1.08)";
     ctx.drawImage(v, 0, 0, w, h);
-    setShots((s) => [...s, { url: c.toDataURL("image/jpeg", 0.85) }]);
+    let url: string | null = null;
+    if (autoCrop) {
+      const box = detectPageBox(c);
+      if (box) url = cropToDataUrl(c, box);
+    }
+    if (!url) url = c.toDataURL("image/jpeg", 0.85);
+    setShots((s) => [...s, { url }]);
   }
 
   function close() {
@@ -77,14 +107,27 @@ export function DocScanner({
     <div className="fixed inset-0 z-[95] flex flex-col bg-ink">
       <div className="flex items-center justify-between p-3 text-paper">
         <span className="font-display text-sm font-bold">Scan document</span>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={close}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/15"
-        >
-          <XIcon size={18} weight="bold" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAutoCrop((a) => !a)}
+            aria-pressed={autoCrop}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+              autoCrop ? "bg-lime text-lime-ink" : "bg-paper/15 text-paper"
+            }`}
+          >
+            <CropIcon size={14} weight="bold" />
+            Auto-crop {autoCrop ? "on" : "off"}
+          </button>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={close}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/15"
+          >
+            <XIcon size={18} weight="bold" />
+          </button>
+        </div>
       </div>
 
       <div className="relative flex-1 overflow-hidden">
