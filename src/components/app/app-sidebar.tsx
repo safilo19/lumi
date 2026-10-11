@@ -11,6 +11,9 @@ import {
   CardsThreeIcon,
   ExamIcon,
   NotePencilIcon,
+  ChartBarIcon,
+  GraphIcon,
+  EyeIcon,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
 import { useCourses } from "@/lib/local/use-courses";
@@ -22,6 +25,9 @@ const nav = [
   { href: "/record", label: "New recording", icon: MicrophoneIcon },
   { href: "/review", label: "Review", icon: CardsThreeIcon },
   { href: "/quiz", label: "Quiz me", icon: ExamIcon },
+  { href: "/occlusion", label: "Image occlusion", icon: EyeIcon },
+  { href: "/analytics", label: "Progress", icon: ChartBarIcon },
+  { href: "/graph", label: "Knowledge graph", icon: GraphIcon },
 ];
 
 export function AppSidebar() {

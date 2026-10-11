@@ -59,9 +59,10 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 - `src/app/(app)/` — route group (does NOT affect URLs). The app:
   `/` dashboard, `/courses`, `/courses/[id]`, `/library`, `/notes/[id]`,
-  `/notes/[id]/edit`, `/record`, `/review` (flashcards), `/quiz`, `/search`,
-  `/settings`. Ask-your-notes is embedded per-note (`components/app/ask-note.tsx`
-  on the note view), not a separate route.
+  `/notes/[id]/edit`, `/record`, `/review` (flashcards), `/quiz`, `/exam`
+  (practice exam), `/analytics` (weak-spots), `/graph` (knowledge graph),
+  `/occlusion` (image-occlusion), `/search`, `/settings`. Ask-your-notes is
+  embedded per-note (`components/app/ask-note.tsx`), not a route.
 - `src/app/about/` — marketing landing (`/about`): SiteNav, Hero, HowItWorks,
   Features, FreeForever, ClosingCta, SiteFooter.
 - `src/app/api/notes/create/` — server-side AI note generation (keys stay
@@ -70,6 +71,9 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   (both call FreeRouter `freeChat`; client sends note context, keys stay server).
   `src/app/api/brief/` (TL;DR + key points) and `src/app/api/translate/`
   (string-array translate, structure-preserving) back the premium note tools.
+  Also: `api/level` (difficulty rewrite via `generateNote`), `api/recap` (spoken
+  recap script), `api/exam` (practice exam JSON), `api/embed` (Gemini embeddings
+  for semantic search).
 - `src/app/api/visual/` — AI generates one diagram/flowchart/mindmap/illustration
   (SVG) block from note context. `src/app/api/photo/` — free no-key image search
   (Openverse). Note blocks now include `image` + `illustration`.
@@ -78,8 +82,9 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   (spaced repetition) + `quiz.ts` (type). `src/lib/notes/text.ts` —
   `noteToPlainText` (AI context + search haystack).
 - `src/app/api/mcp/` — MCP server endpoint.
-- `src/lib/local/` — IndexedDB store (DB `lumi`, v4; stores: `notes`, `meta`,
-  `cards`, `courses`, `highlights`). `notes.ts` (incl. `deleteNote`/`restoreNote`),
+- `src/lib/local/` — IndexedDB store (DB `lumi`, v5; stores: `notes`, `meta`,
+  `cards`, `courses`, `highlights`, `attachments`, `audio`, `quizResults`,
+  `embeddings`, `occlusions`). `notes.ts` (incl. `deleteNote`/`restoreNote`),
   `courses.ts` (user-created courses, no defaults), loader hooks `use-notes.ts`
   + `use-courses.ts` (`useCourses` + `addCourse`/`removeCourse`, shared cache).
 - `src/lib/freerouter/` — AI pipeline / provider failover.
@@ -120,26 +125,33 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Study-suite batch (9 features; DB → v5). Difficulty levels
+  (`/api/level` + Level menu in `note-reader`), Audio recap (`/api/recap` → read
+  aloud), Attach slides/PDF (`note-attachments.tsx` + `attachments` store),
+  Jump-to-moment audio (record saves blob → `audio` store → `note-audio.tsx`
+  player with marker seeks), Practice exams (`/api/exam` + `/exam` page),
+  Weak-spot analytics (`quizResults` store, quiz/exam log results, `/analytics`),
+  Knowledge graph (`/graph`, xyflow, notes linked by shared key terms), Semantic
+  search (`/api/embed` Gemini embeddings cached in `embeddings` store, cosine, in
+  `/search` with keyword fallback), Image-occlusion (`/occlusion` + `occlusions`
+  store, draw/hide/reveal boxes). All AI routes live-tested. Sidebar + note
+  toolbar link the new pages.
+
 - 2026-10-11 — Exhaustive, high-detail notes (`NOTE_SYSTEM_PROMPT`, `MAX_TOKENS` 8192):
   cover EVERY detail, no block cap (30-60+). Math → LaTeX `formula` blocks + every teacher
   example reproduced step by step; mindmaps/flowcharts end-to-end (explanations/example values,
   not heading links); `generateNote`/`generateNoteFromMedia` auto-add 1 best-effort SVG
   `illustration` for the first worked example (`illustrateExamples` + `generateIllustration`/
   `sanitizeSvg` in `llm.ts`, retry once). Live-tested: 42-47 blocks with formulas + illustration.
-- 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic; all 8
-  tools). A: Fraunces serif, editorial CSS (`.note-dropcap`/`.editorial-rule`/
-  `.note-aurora`/`.reader-serif`), `note-masthead.tsx`, `reading-progress.tsx`,
-  serif headings + drop cap + per-block scroll-reveal, shimmer skeleton. B:
-  `note-toc.tsx` (sticky TOC + per-section flashcards/quiz), `focus-reader.tsx`
-  (fullscreen; font/size/width/theme via token overrides), `read-aloud.tsx`
-  (SpeechSynthesis teleprompter), highlights + margin notes (`highlights` store
-  v4, `lib/local/highlights.ts`, DOM apply `lib/notes/highlight-dom.ts`). C:
-  `selection-tools.tsx` (highlight + Explain/Simplify/Expand/Define via `/api/ask`),
-  `note-brief.tsx` (`/api/brief`, cached on `note.brief`), translate (`/api/translate`
-  + `lib/notes/translate.ts`), section→flashcards (`generateCardsForBlocks`) /
-  quiz (sessionStorage `lumi-quiz-scope`, `?scoped=1`). Orchestrated by
-  `note-reader.tsx`; `#note-print-area`/`.no-print` preserved. Build/lint/tsc green,
-  `/api/brief` + `/api/translate` tested live.
+- 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic, all 8
+  tools) orchestrated by `note-reader.tsx`: Fraunces serif + editorial CSS
+  (`.note-dropcap`/`.editorial-rule`/`.note-aurora`/`.reader-serif`),
+  `note-masthead.tsx`, `reading-progress.tsx`, serif headings + drop cap +
+  scroll-reveal, shimmer skeleton, `note-toc.tsx` (TOC + per-section cards/quiz),
+  `focus-reader.tsx`, `read-aloud.tsx`, highlights (`highlights.ts` +
+  `highlight-dom.ts`), `selection-tools.tsx` (Explain/Simplify/… via `/api/ask`),
+  `note-brief.tsx` (`/api/brief`), translate (`/api/translate` + `translate.ts`).
+  `#note-print-area`/`.no-print` preserved.
 
 - 2026-10-11 — Scanner: instant + lightweight auto-crop + autofocus (pushed): no
   OpenCV (the 10MB wasm hung on "Preparing"). `doc-scanner.tsx` is dependency-free —
@@ -149,27 +161,15 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   Auto-crop toggle, default on). Camera requests continuous autofocus
   (`applyContinuousFocus`, feature-detected) + 1920x1080 for sharpness. Gemini 404
   fix kept: NOTE_CHAIN/VISION use `gemini-3.5-flash` + lite fallbacks (PDF 200).
-- 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): one page to create a note by
-  Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
-  or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`
-  (Gemini vision/doc → note, via `generateNoteFromMedia` in `llm.ts`) and
-  `/api/notes/from-text` (pasted text or a fetched URL → note; `mode:"revision"`
-  for cheat-sheets). Course detail has a "Revision sheet" button; sidebar + dashboard link to `/new`.
-- 2026-10-11 — Record screen overhaul (pushed `c9af589`): real-time canvas
-  visualizer `components/app/orbital-bloom.tsx` (Web Audio AnalyserNode →
-  concentric rings + rotating frequency petals) behind the record button;
-  Pause/Resume (MediaRecorder, feature-detected), "Mark moment" bookmarks,
-  mic-level silence alert, screen Wake Lock, and an experimental live transcript
-  (webkit SpeechRecognition, hidden if unsupported). Markers flow to
-  `/api/notes/create`: STT now requests `verbose_json` (segments in
-  `TranscriptResult`), the route tags flagged segments `[IMPORTANT MOMENT]`, and
-  `NOTE_SYSTEM_PROMPT` tells the model to emphasise them.
-- 2026-10-11 — User courses + delete/undo (pushed `aa5d698`): removed the 3
-  hardcoded default courses; courses are now student-created in IndexedDB
-  (`courses` store, DB v3) via `/courses` (create form + delete). Delete-with-
-  confirm-and-undo for notes (note toolbar) and courses via `overlays.tsx`
-  (`confirmAction` + `showUndo`). Moved the per-note "Ask this note" panel to the
-  top. `mock-data.ts` is types-only; all course lookups use `useCourses`.
+- 2026-10-11 — Capture hub `/new` (pushed `c0df7b6`): create a note by Write /
+  Scan / Import PDF / Upload audio / Paste text or link. Routes `/api/scan`
+  (`generateNoteFromMedia`) + `/api/notes/from-text`. Course "Revision sheet" button.
+- 2026-10-11 — Record screen overhaul (pushed `c9af589`): canvas visualizer
+  `orbital-bloom.tsx`, Pause/Resume, "Mark moment" bookmarks, silence alert, Wake
+  Lock, live transcript. STT requests `verbose_json`; `[IMPORTANT MOMENT]` tags.
+- 2026-10-11 — User courses + delete/undo (pushed `aa5d698`): student-created
+  courses (`courses` store), delete-with-confirm-and-undo via `overlays.tsx`
+  (`confirmAction` + `showUndo`); `mock-data.ts` types-only, lookups via `useCourses`.
 - 2026-10-11 — Android APK fixed (pushed `c67ffd9`): TWA build was failing on
   minSdk 21 vs androidbrowserhelper's required 24 → bumped `twa-manifest.json`
   minSdk to 24; rebuilt via GH Actions and replaced the stale `lumi.apk` on the

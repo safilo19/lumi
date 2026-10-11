@@ -5,6 +5,7 @@ import { ArrowLeftIcon, ExamIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useCourses } from "@/lib/local/use-courses";
 import { getNote, listNotesForCourse } from "@/lib/local/notes";
+import { saveResult } from "@/lib/local/results";
 import { noteToPlainText } from "@/lib/notes/text";
 import type { QuizQuestion } from "@/lib/study/quiz";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export default function QuizPage() {
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [error, setError] = useState("");
+  const [meta, setMeta] = useState<{ courseId: string; noteId?: string; title: string } | null>(null);
 
   const generate = useCallback(async (context: string) => {
     if (!context.trim()) {
@@ -56,11 +58,15 @@ export default function QuizPage() {
       try {
         const raw = sessionStorage.getItem("lumi-quiz-scope");
         if (raw) {
-          const scope = JSON.parse(raw) as { noteId?: string; context?: string };
+          const scope = JSON.parse(raw) as { noteId?: string; title?: string; context?: string };
           sessionStorage.removeItem("lumi-quiz-scope");
           if (scope.context && scope.noteId === noteId) {
             const ctx = scope.context;
-            queueMicrotask(() => generate(ctx));
+            queueMicrotask(async () => {
+              const n = await getNote(noteId);
+              setMeta({ courseId: n?.courseId ?? "", noteId, title: scope.title || n?.title || "Quiz" });
+              generate(ctx);
+            });
             return;
           }
         }
@@ -68,7 +74,10 @@ export default function QuizPage() {
     }
     let on = true;
     getNote(noteId).then((n) => {
-      if (on && n) generate(noteToPlainText(n));
+      if (on && n) {
+        setMeta({ courseId: n.courseId, noteId: n.id, title: n.title });
+        generate(noteToPlainText(n));
+      }
     });
     return () => {
       on = false;
@@ -77,6 +86,7 @@ export default function QuizPage() {
 
   async function quizCourse(courseId: string) {
     const notes = await listNotesForCourse(courseId);
+    setMeta({ courseId, title: courses.find((c) => c.id === courseId)?.code ?? "Quiz" });
     generate(notes.map(noteToPlainText).join("\n\n"));
   }
 
@@ -90,6 +100,15 @@ export default function QuizPage() {
       setIdx((n) => n + 1);
       setPicked(null);
     } else {
+      if (meta) {
+        void saveResult({
+          courseId: meta.courseId,
+          noteId: meta.noteId,
+          title: meta.title,
+          score,
+          total: questions.length,
+        });
+      }
       setPhase("done");
     }
   }

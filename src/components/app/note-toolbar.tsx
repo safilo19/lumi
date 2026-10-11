@@ -5,6 +5,7 @@ import {
   PencilSimpleLineIcon,
   CardsThreeIcon,
   ExamIcon,
+  GraduationCapIcon,
   TrashSimpleIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,14 @@ export function NoteToolbar({ note }: { note: Note }) {
       >
         <ExamIcon size={16} weight="bold" />
         Quiz
+      </Button>
+      <Button
+        size="sm"
+        variant="soft"
+        onClick={() => router.push(`/exam?note=${note.id}`)}
+      >
+        <GraduationCapIcon size={16} weight="bold" />
+        Exam
       </Button>
       <ExportDialog note={note} />
       <Button size="sm" variant="ghost" onClick={remove}>

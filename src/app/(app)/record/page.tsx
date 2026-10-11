@@ -22,6 +22,7 @@ import { NoteBlocks } from "@/components/app/note-blocks";
 import { OrbitalBloom } from "@/components/app/orbital-bloom";
 import { type Note, type NoteBlock } from "@/lib/mock-data";
 import { createNote } from "@/lib/local/notes";
+import { saveAudio } from "@/lib/local/audio";
 import { useCourses } from "@/lib/local/use-courses";
 
 type Phase = "idle" | "recording" | "processing" | "done" | "error";
@@ -198,6 +199,8 @@ export default function RecordPage() {
         blocks: generated.blocks,
         durationMin: generated.durationMin,
       });
+      // Keep the recording with the note so it can be replayed / jumped into.
+      void saveAudio(saved.id, blob, markersRef.current).catch(() => {});
       setNote(saved);
       setPhase("done");
     } catch (err) {

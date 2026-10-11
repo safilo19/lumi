@@ -7,12 +7,17 @@
 import { type Note, type NoteBlock } from "@/lib/mock-data";
 
 const DB_NAME = "lumi";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const NOTES = "notes";
 const META = "meta";
 export const CARDS = "cards";
 export const COURSES = "courses";
 export const HIGHLIGHTS = "highlights";
+export const ATTACHMENTS = "attachments";
+export const AUDIO = "audio";
+export const QUIZ_RESULTS = "quizResults";
+export const EMBEDDINGS = "embeddings";
+export const OCCLUSIONS = "occlusions";
 
 function byRecencyDesc(a: Note, b: Note) {
   return +new Date(b.recordedAt) - +new Date(a.recordedAt);
@@ -54,6 +59,17 @@ export function openDB(): Promise<IDBDatabase> {
         const hs = db.createObjectStore(HIGHLIGHTS, { keyPath: "id" });
         hs.createIndex("noteId", "noteId", { unique: false });
       }
+      if (!db.objectStoreNames.contains(ATTACHMENTS)) {
+        const as = db.createObjectStore(ATTACHMENTS, { keyPath: "id" });
+        as.createIndex("noteId", "noteId", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(AUDIO)) db.createObjectStore(AUDIO, { keyPath: "noteId" });
+      if (!db.objectStoreNames.contains(QUIZ_RESULTS)) {
+        const qs = db.createObjectStore(QUIZ_RESULTS, { keyPath: "id" });
+        qs.createIndex("courseId", "courseId", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(EMBEDDINGS)) db.createObjectStore(EMBEDDINGS, { keyPath: "noteId" });
+      if (!db.objectStoreNames.contains(OCCLUSIONS)) db.createObjectStore(OCCLUSIONS, { keyPath: "id" });
     };
     open.onsuccess = () => resolve(open.result);
     open.onerror = () => reject(open.error);
