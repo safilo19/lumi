@@ -49,8 +49,8 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 - `@xyflow/react` (React Flow) powers the draggable/zoomable diagram canvas
   (`components/app/diagram-canvas.tsx`) for diagram/flowchart/mindmap blocks.
 - Fonts: Fredoka (`--font-display`), Nunito (`--font-sans`), Geist Mono
-  (`--font-mono`), **Patrick Hand** (`--font-hand`, handwriting — used for note
-  content on screen + export).
+  (`--font-mono`), Caveat (`--font-hand`), Fraunces (`--font-serif`, editorial
+  reading view — note titles/headings/drop caps).
 - `@phosphor-icons/react` 2.1.10. TypeScript 5, ESLint 9
   (`eslint-config-next` 16.4.0 — `react-hooks/set-state-in-effect` is strict;
   prefer deriving state or `useSyncExternalStore` over setState-in-effect).
@@ -118,6 +118,15 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Note view premium redesign, Phase A (editorial + cinematic):
+  Fraunces serif (`--font-serif`) + editorial CSS (`.note-dropcap`,
+  `.editorial-rule`, `.note-aurora`); `note-masthead.tsx` (serif title, animated
+  aurora, read-time count-up), `reading-progress.tsx` (scroll bar + back-to-top);
+  `note-blocks.tsx` serif headings + drop cap + per-block scroll-reveal (`Reveal`);
+  note page shimmer skeleton. User picked: Editorial luxe + Cinematic + all 8 tools.
+  Pending: Phase B (focus mode, read-aloud, highlight/annotate, TOC) + Phase C
+  (select-to-AI, TL;DR + key points, translate, section→flashcards/quiz).
+
 - 2026-10-11 — Scanner: instant + lightweight auto-crop + autofocus (pushed): no
   OpenCV (the 10MB wasm hung on "Preparing"). `doc-scanner.tsx` is dependency-free —
   live camera + alignment frame, instant multi-page capture, grayscale/contrast
@@ -174,25 +183,11 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   `Block` from `note-blocks.tsx`. Keeps the structured block model (flashcards/
   quiz/search still work). Landing `note-preview.tsx` refreshed to handwriting.
   Build (clean), lint, tsc green.
-- 2026-10-11 — Media + AI visuals + interactive diagrams (not committed): added
-  `image` + `illustration` note blocks. Editor gained an "Add with AI and media"
-  panel: AI-generate illustration/flowchart/mindmap/diagram from the note
-  (`/api/visual`), upload an image, or find a free photo (`/api/photo`,
-  Openverse). Diagrams now render in a shared `FigureFrame` with expand-to-
-  fullscreen; mindmap branches are collapsible (`<details>`). `blocksToText`
-  exported from `lib/notes/text.ts`. Build, lint, tsc green.
-- 2026-10-11 — First-run tour (Phase 5; not committed): animated 5-step
-  welcome walkthrough (`components/app/first-run-tour.tsx`, `motion`/
-  `AnimatePresence`, respects reduced motion) mounted in `(app)/layout.tsx`,
-  gated by `localStorage` key `lumi-tour-done`; last step routes to `/record`.
-  Build, lint, tsc green.
-- 2026-10-11 — Export overhaul (Phase 4; not committed): new branded
-  `ExportDialog` (`components/app/export-dialog.tsx`) with format (PDF / PNG
-  image / Word .docx) + paper style (handwritten / clean / minimal). PDF drives
-  browser print with `data-paper` on `<html>` + new print/paper CSS in
-  `globals.css`; PNG via `html-to-image`; `.docx` via `src/lib/export/docx.ts`
-  (`docx`). Added `.lumi-mark` highlighter on key terms. `NoteToolbar` now takes
-  `note` and shows Edit + Export (dropped the Share stub). Build, lint, tsc green.
+- 2026-10-11 — Media + AI visuals (`image`/`illustration` blocks; editor "Add with
+  AI and media" → `/api/visual` + `/api/photo`; `FigureFrame` fullscreen; `blocksToText`).
+- 2026-10-11 — First-run tour (`first-run-tour.tsx`, `motion`, `localStorage` lumi-tour-done).
+- 2026-10-11 — Export overhaul: `ExportDialog` PDF(print)/PNG(`html-to-image`)/docx + paper
+  styles via `[data-paper]`; `.lumi-mark` highlighter; `NoteToolbar` Edit + Export.
 - 2026-10-10 — Local-first conversion (commit `1d004cb`, pushed): removed auth +
   Postgres (`src/lib/auth`, `src/lib/db`, `/api/auth/*`); notes in IndexedDB.
   tsc green.

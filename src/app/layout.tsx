@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Fredoka, Nunito } from "next/font/google";
+import { Caveat, Fraunces, Fredoka, Nunito } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import Script from "next/script";
 import { PwaUpdater } from "@/components/app/pwa-updater";
@@ -26,6 +26,16 @@ const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800", "900"],
+  display: "swap",
+});
+
+// Editorial serif for the premium note reading view — titles, headings, drop
+// caps. Fraunces has a high-contrast, magazine feel with a true italic.
+const fraunces = Fraunces({
+  variable: "--font-serif-src",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "900"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -66,7 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${fredoka.variable} ${nunito.variable} ${caveat.variable} ${GeistMono.variable} h-full`}
+      className={`${fredoka.variable} ${nunito.variable} ${caveat.variable} ${fraunces.variable} ${GeistMono.variable} h-full`}
     >
       <body className="paper-grain min-h-full flex flex-col">
         <Script

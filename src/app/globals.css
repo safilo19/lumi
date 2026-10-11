@@ -154,6 +154,7 @@
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-hand: var(--font-hand-src), "Caveat", ui-rounded, cursive;
+  --font-serif: var(--font-serif-src), "Fraunces", Georgia, "Times New Roman", serif;
 
   --radius-card: 26px;
   --radius-input: 16px;
@@ -256,6 +257,46 @@ body {
   padding: 0 0.12em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+}
+
+/* ---- Editorial reading view (premium note typography) ---- */
+/* Magazine-style drop cap on the opening paragraph. */
+.note-dropcap::first-letter {
+  float: left;
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 3.4em;
+  line-height: 0.78;
+  padding: 0.06em 0.1em 0 0;
+  margin: 0.02em 0.04em 0 0;
+  color: var(--accent);
+}
+/* Hairline rule used between sections and under the masthead. */
+.editorial-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--line-strong) 12%,
+    var(--line-strong) 88%,
+    transparent
+  );
+}
+/* Slow animated gradient wash behind the masthead. */
+@keyframes lumi-aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.note-aurora {
+  background-size: 200% 200%;
+  animation: lumi-aurora 18s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-aurora {
+    animation: none;
+  }
 }
 
 /* Export paper styles — set via data-paper on <html> during export so both the

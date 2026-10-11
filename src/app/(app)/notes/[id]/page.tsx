@@ -2,98 +2,70 @@
 import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeftIcon,
-  ClockIcon,
-  TranslateIcon,
-  UserIcon,
-} from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { NoteBlocks } from "@/components/app/note-blocks";
-import { NoteArt } from "@/components/app/note-art";
+import { NoteMasthead } from "@/components/app/note-masthead";
+import { ReadingProgress } from "@/components/app/reading-progress";
 import { AskNote } from "@/components/app/ask-note";
 import { NoteToolbar } from "@/components/app/note-toolbar";
 import { useNote } from "@/lib/local/use-notes";
 import { useCourses } from "@/lib/local/use-courses";
 
-export default function NotePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function NotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: note, loading } = useNote(id);
   const { data: courses } = useCourses();
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-3xl py-16 text-center text-ink-soft">
-        Loading note…
-      </div>
-    );
-  }
+  if (loading) return <NoteSkeleton />;
   if (!note) notFound();
 
   const course = courses.find((c) => c.id === note.courseId);
 
   return (
-    <div id="note-print-area" className="mx-auto max-w-3xl">
-      <Link
-        href={course ? `/courses/${course.id}` : "/"}
-        className="no-print inline-flex items-center gap-1.5 text-sm text-ink-soft transition-colors hover:text-ink"
-      >
-        <ArrowLeftIcon size={15} />
-        {course ? course.name : "Dashboard"}
-      </Link>
+    <>
+      <ReadingProgress />
+      <div id="note-print-area" className="mx-auto max-w-3xl">
+        <Link
+          href={course ? `/courses/${course.id}` : "/"}
+          className="no-print inline-flex items-center gap-1.5 text-sm font-bold text-ink-soft transition-colors hover:text-ink"
+        >
+          <ArrowLeftIcon size={15} />
+          {course ? course.name : "Dashboard"}
+        </Link>
 
-      <div className="mt-4 h-24 w-full overflow-hidden rounded-[var(--radius-card)] border-2 border-line sm:h-32">
-        <NoteArt seed={note.id} className="h-full w-full" />
-      </div>
-
-      <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="rounded-full bg-accent-weak px-2.5 py-1 font-medium text-accent-weak-ink">
-              {course?.code}
-            </span>
-          </div>
-          <h1 className="mt-3 font-hand text-5xl font-bold leading-tight text-ink">
-            {note.title}
-          </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-soft">
-            <span className="inline-flex items-center gap-1.5">
-              <UserIcon size={15} />
-              {note.lecturer}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <ClockIcon size={15} />
-              {note.durationMin} min
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <TranslateIcon size={15} />
-              {note.language}
-            </span>
-          </div>
-          {note.tags && note.tags.length ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {note.tags.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-ink-soft"
-                >
-                  #{t}
-                </span>
-              ))}
-            </div>
-          ) : null}
+        <div className="mt-4">
+          <NoteMasthead note={note} course={course} />
         </div>
-        <NoteToolbar note={note} />
+
+        <div className="no-print mt-5 flex justify-end">
+          <NoteToolbar note={note} />
+        </div>
+
+        <div className="no-print mt-6">
+          <AskNote note={note} />
+        </div>
+
+        <hr className="editorial-rule my-9" />
+
+        <NoteBlocks blocks={note.blocks} />
       </div>
+    </>
+  );
+}
 
-      <AskNote note={note} />
-
-      <hr className="my-8 border-line" />
-
-      <NoteBlocks blocks={note.blocks} />
+// Premium shimmer skeleton while the note loads from IndexedDB.
+function NoteSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl animate-pulse">
+      <div className="h-4 w-24 rounded-full bg-surface-2" />
+      <div className="mt-4 h-48 rounded-[var(--radius-card)] border-2 border-line bg-surface-2 sm:h-56" />
+      <div className="mt-8 space-y-3">
+        <div className="h-5 w-2/3 rounded-full bg-surface-2" />
+        <div className="h-4 w-full rounded-full bg-surface-2" />
+        <div className="h-4 w-11/12 rounded-full bg-surface-2" />
+        <div className="h-4 w-10/12 rounded-full bg-surface-2" />
+      </div>
+      <div className="mt-8 h-28 rounded-[var(--radius-card)] border-2 border-line bg-surface-2" />
     </div>
   );
 }

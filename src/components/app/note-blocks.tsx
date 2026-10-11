@@ -24,6 +24,7 @@ import {
 import katex from "katex";
 import { type NoteBlock } from "@/lib/mock-data";
 import { DiagramCanvas } from "@/components/app/diagram-canvas";
+import { Reveal } from "@/components/ui/reveal";
 import { cn } from "@/lib/utils";
 
 // Render a LaTeX expression to KaTeX HTML. throwOnError:false degrades bad
@@ -69,16 +70,19 @@ const calloutTones = {
 } as const;
 
 export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
+  const leadIndex = blocks.findIndex((b) => b.kind === "paragraph");
   return (
-    <div className="flex flex-col gap-6 text-[1.0625rem] leading-relaxed text-ink">
+    <div className="flex flex-col gap-7 font-sans text-[1.075rem] leading-[1.85] text-ink">
       {blocks.map((block, i) => (
-        <Block key={i} block={block} />
+        <Reveal key={i} delay={Math.min(i, 6) * 0.04} y={16}>
+          <Block block={block} lead={i === leadIndex} />
+        </Reveal>
       ))}
     </div>
   );
 }
 
-export function Block({ block }: { block: NoteBlock }) {
+export function Block({ block, lead }: { block: NoteBlock; lead?: boolean }) {
   switch (block.kind) {
     case "summary":
       return (
@@ -94,12 +98,24 @@ export function Block({ block }: { block: NoteBlock }) {
       );
     case "heading":
       return (
-        <h2 className="mt-2 inline-block border-b-4 border-lime-deep/50 pb-0.5 font-hand text-3xl font-bold text-ink">
-          {block.text}
-        </h2>
+        <div className="mt-4">
+          <hr className="editorial-rule mb-5" />
+          <h2 className="font-serif text-3xl font-bold tracking-tight text-ink sm:text-[2.1rem]">
+            {block.text}
+          </h2>
+        </div>
       );
     case "paragraph":
-      return <p className="text-ink-soft">{block.text}</p>;
+      return (
+        <p
+          className={cn(
+            "text-ink-soft",
+            lead && "note-dropcap text-[1.15rem] leading-[1.8] text-ink",
+          )}
+        >
+          {block.text}
+        </p>
+      );
     case "bullets":
       return (
         <ul className="flex flex-col gap-2.5">
