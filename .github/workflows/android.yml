@@ -167,7 +167,9 @@ jobs:
           export VNAME="$(node -p "require('./twa-manifest.json').appVersionName || '1.0.0'")"
           export VCODE="${{ github.run_number }}"
           echo "feeding versionName=$VNAME versionCode=$VCODE"
-          timeout 1200 bash -c '{ printf "%s\n%s\n" "$VNAME" "$VCODE"; yes ""; } | bubblewrap build --skipPwaValidation' 2>&1 | tail -n 80 || true
+          timeout 1200 bash -c '{ printf "%s\n%s\n" "$VNAME" "$VCODE"; yes ""; } | bubblewrap build --skipPwaValidation' 2>&1 | tee build.log | tail -n 120 || true
+          echo "===== GRADLE FAILURE (filtered) ====="
+          grep -nE "FAILURE: Build failed|What went wrong|Execution failed for task|Caused by:|error:|Could not (resolve|find|create|determine|read)|does not exist|No matching|aapt|Namespace|compileSdk|minSdk|SDK location" build.log | grep -viE "org\.gradle|^[0-9]+:[[:space:]]*at " | head -80 || true
           test -f app-release-signed.apk
 
       - name: Collect APK
