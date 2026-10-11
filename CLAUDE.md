@@ -114,7 +114,11 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Draggable diagram canvas (not committed): diagram/flowchart/
+- 2026-10-11 — PWA service worker hardening (`scripts/gen-sw.mjs`): navigation
+  fetch is now network-first with a 4s AbortController timeout so a stalled
+  launch request can't hang the installed app on a white screen; offline page
+  gained a "Try again" reload button. `public/sw.js` is generated on build.
+- 2026-10-11 — Draggable diagram canvas (committed `7099816`, pushed): diagram/flowchart/
   mindmap blocks now render in `diagram-canvas.tsx` via `@xyflow/react` — nodes
   are draggable, the canvas pans/zooms (Controls + fit view) with a fullscreen
   toggle; replaced the old static SVG renderers (removed DiagramFlow/Flowchart/
