@@ -1,137 +1,87 @@
 "use client";
-
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeftIcon,
+  FloppyDiskIcon,
   CaretUpIcon,
   CaretDownIcon,
   TrashSimpleIcon,
   PlusIcon,
-  FloppyDiskIcon,
-  ArrowLeftIcon,
   WarningCircleIcon,
+  MagicWandIcon,
   SparkleIcon,
-  TextHOneIcon,
-  TextAlignLeftIcon,
-  ListBulletsIcon,
-  FunctionIcon,
-  FlowArrowIcon,
-  BookmarkSimpleIcon,
-  LightbulbIcon,
-  BookOpenIcon,
   TreeStructureIcon,
   GraphIcon,
+  FlowArrowIcon,
   ImageIcon,
-  MagicWandIcon,
   UploadSimpleIcon,
+  BookOpenIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Block } from "@/components/app/note-blocks";
 import { updateNote } from "@/lib/local/notes";
 import { blocksToText } from "@/lib/notes/text";
-import type { NoteBlock, FlowStepType } from "@/lib/mock-data";
+import type { NoteBlock } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
 
 type Kind = NoteBlock["kind"];
 
-const KINDS: { kind: Kind; label: string; Icon: typeof SparkleIcon }[] = [
-  { kind: "heading", label: "Heading", Icon: TextHOneIcon },
-  { kind: "paragraph", label: "Paragraph", Icon: TextAlignLeftIcon },
-  { kind: "bullets", label: "Bullets", Icon: ListBulletsIcon },
-  { kind: "summary", label: "Summary", Icon: SparkleIcon },
-  { kind: "keyterm", label: "Key term", Icon: BookmarkSimpleIcon },
-  { kind: "callout", label: "Callout", Icon: LightbulbIcon },
-  { kind: "formula", label: "Formula", Icon: FunctionIcon },
-  { kind: "diagram", label: "Flow", Icon: FlowArrowIcon },
-  { kind: "flowchart", label: "Flowchart", Icon: TreeStructureIcon },
-  { kind: "mindmap", label: "Mindmap", Icon: GraphIcon },
-  { kind: "glossary", label: "Glossary", Icon: BookOpenIcon },
+// Uncontrolled contentEditable: commits on blur, so typing never re-renders the
+// parent and the caret never jumps. The note is edited in place, as it looks.
+function Editable({
+  value,
+  onCommit,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onCommit: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      tabIndex={0}
+      data-ph={placeholder}
+      onBlur={(e) => onCommit(e.currentTarget.textContent ?? "")}
+      className={cn(
+        "rounded-md outline-none transition-colors focus:bg-accent-weak/40 empty:before:text-ink-faint empty:before:content-[attr(data-ph)]",
+        className,
+      )}
+    >
+      {value}
+    </div>
+  );
+}
+
+const TEXT_KINDS: { kind: Kind; label: string }[] = [
+  { kind: "heading", label: "Heading" },
+  { kind: "paragraph", label: "Paragraph" },
+  { kind: "bullets", label: "Bullets" },
+  { kind: "keyterm", label: "Key term" },
+  { kind: "callout", label: "Callout" },
+  { kind: "formula", label: "Formula" },
 ];
 
-function blankBlock(kind: Kind): NoteBlock {
+function blank(kind: Kind): NoteBlock {
   switch (kind) {
-    case "summary":
-    case "paragraph":
     case "heading":
       return { kind, text: "" };
     case "bullets":
       return { kind, items: [""] };
-    case "formula":
-      return { kind, label: "", expr: "" };
-    case "diagram":
-      return { kind, caption: "", nodes: ["", ""] };
     case "keyterm":
       return { kind, term: "", definition: "" };
     case "callout":
       return { kind, tone: "tip", text: "" };
-    case "glossary":
-      return { kind, items: [{ term: "", definition: "" }] };
-    case "flowchart":
-      return {
-        kind,
-        caption: "",
-        steps: [
-          { text: "", type: "start" },
-          { text: "", type: "end" },
-        ],
-      };
-    case "mindmap":
-      return { kind, center: "", branches: [{ label: "", children: [""] }] };
-    case "image":
-      return { kind, src: "", alt: "", caption: "" };
-    case "illustration":
-      return { kind, svg: "", caption: "" };
+    case "formula":
+      return { kind, label: "", expr: "" };
+    default:
+      return { kind: "paragraph", text: "" };
   }
-}
-
-const fieldCls =
-  "w-full rounded-[var(--radius-input)] border-2 border-line-strong bg-surface px-3 py-2 font-semibold text-ink outline-none transition-colors focus:border-accent placeholder:text-ink-faint";
-
-// Trim list rows and drop empty ones so saved notes stay clean.
-function cleanBlocks(blocks: NoteBlock[]): NoteBlock[] {
-  return blocks.map((b) => {
-    if (b.kind === "bullets") {
-      return { ...b, items: b.items.map((i) => i.trim()).filter(Boolean) };
-    }
-    if (b.kind === "diagram") {
-      return { ...b, nodes: b.nodes.map((n) => n.trim()).filter(Boolean) };
-    }
-    if (b.kind === "glossary") {
-      return {
-        ...b,
-        items: b.items
-          .map((it) => ({
-            term: it.term.trim(),
-            definition: it.definition.trim(),
-          }))
-          .filter((it) => it.term || it.definition),
-      };
-    }
-    if (b.kind === "flowchart") {
-      return {
-        ...b,
-        steps: b.steps
-          .map((s) => ({
-            ...s,
-            text: s.text.trim(),
-            branches: s.branches
-              ?.map((br) => ({ label: br.label.trim(), text: br.text.trim() }))
-              .filter((br) => br.label && br.text),
-          }))
-          .filter((s) => s.text),
-      };
-    }
-    if (b.kind === "mindmap") {
-      return {
-        ...b,
-        branches: b.branches
-          .map((br) => ({
-            label: br.label.trim(),
-            children: br.children.map((c) => c.trim()).filter(Boolean),
-          }))
-          .filter((br) => br.label),
-      };
-    }
-    return b;
-  });
 }
 
 export function NoteEditor({
@@ -157,40 +107,32 @@ export function NoteEditor({
   const [genError, setGenError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function patchBlock(i: number, next: NoteBlock) {
+  const patch = (i: number, next: NoteBlock) =>
     setBlocks((bs) => bs.map((b, j) => (j === i ? next : b)));
-  }
-  function moveBlock(i: number, dir: -1 | 1) {
+  const move = (i: number, d: -1 | 1) =>
     setBlocks((bs) => {
-      const j = i + dir;
+      const j = i + d;
       if (j < 0 || j >= bs.length) return bs;
-      const next = [...bs];
-      [next[i], next[j]] = [next[j], next[i]];
-      return next;
+      const n = [...bs];
+      [n[i], n[j]] = [n[j], n[i]];
+      return n;
     });
-  }
-  function removeBlock(i: number) {
-    setBlocks((bs) => bs.filter((_, j) => j !== i));
-  }
-  function addBlock(kind: Kind) {
-    setBlocks((bs) => [...bs, blankBlock(kind)]);
-  }
-  function appendBlock(block: NoteBlock) {
-    setBlocks((bs) => [...bs, block]);
-  }
+  const remove = (i: number) => setBlocks((bs) => bs.filter((_, j) => j !== i));
+  const append = (b: NoteBlock) => setBlocks((bs) => [...bs, b]);
+
   function onUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () =>
-      appendBlock({
+    const r = new FileReader();
+    r.onload = () =>
+      append({
         kind: "image",
-        src: String(reader.result),
+        src: String(r.result),
         alt: file.name.replace(/\.[^.]+$/, ""),
         caption: "",
       });
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   }
   async function generate(
     kind: "illustration" | "flowchart" | "mindmap" | "diagram",
@@ -198,15 +140,18 @@ export function NoteEditor({
     setGenBusy(kind);
     setGenError("");
     try {
-      const context = `${title}\n${blocksToText(blocks)}`;
       const res = await fetch("/api/visual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, context, topic: title }),
+        body: JSON.stringify({
+          kind,
+          context: `${title}\n${blocksToText(blocks)}`,
+          topic: title,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed.");
-      appendBlock(data.block);
+      append(data.block);
     } catch (err) {
       setGenError(err instanceof Error ? err.message : "Generation failed.");
     } finally {
@@ -214,7 +159,7 @@ export function NoteEditor({
     }
   }
   async function addPhoto() {
-    const q = window.prompt("Search for a photo (topic or keyword):", title);
+    const q = window.prompt("Search for a photo:", title);
     if (!q) return;
     setGenBusy("photo");
     setGenError("");
@@ -222,34 +167,26 @@ export function NoteEditor({
       const res = await fetch(`/api/photo?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No image found.");
-      appendBlock({
-        kind: "image",
-        src: data.url,
-        alt: data.alt,
-        caption: data.attribution,
-      });
+      append({ kind: "image", src: data.url, alt: data.alt, caption: data.attribution });
     } catch (err) {
       setGenError(err instanceof Error ? err.message : "Image search failed.");
     } finally {
       setGenBusy(null);
     }
   }
-
   async function save() {
     setSaving(true);
     setError("");
     try {
       const tags = [
-        ...new Set(
-          tagsText
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-        ),
+        ...new Set(tagsText.split(",").map((t) => t.trim()).filter(Boolean)),
       ];
+      const cleaned = blocks.filter((b) =>
+        b.kind === "bullets" ? b.items.some((i) => i.trim()) : true,
+      );
       const updated = await updateNote(id, {
         title: title.trim(),
-        blocks: cleanBlocks(blocks),
+        blocks: cleaned,
         tags,
       });
       if (!updated) throw new Error("This note no longer exists.");
@@ -283,13 +220,12 @@ export function NoteEditor({
         </p>
       ) : null}
 
-      <input
+      <Editable
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onCommit={(v) => setTitle(v)}
         placeholder="Note title"
-        className="mb-3 w-full bg-transparent font-display text-3xl font-bold text-ink outline-none placeholder:text-ink-faint"
+        className="mb-2 font-hand text-5xl font-bold leading-tight text-ink"
       />
-
       <input
         value={tagsText}
         onChange={(e) => setTagsText(e.target.value)}
@@ -303,19 +239,23 @@ export function NoteEditor({
           {error}
         </div>
       ) : null}
-
-      <div className="space-y-4">
+      <div className="flex flex-col gap-5 font-hand text-[1.35rem] leading-relaxed text-ink">
         {blocks.map((block, i) => (
-          <BlockCard
+          <BlockRow
             key={i}
             block={block}
             first={i === 0}
             last={i === blocks.length - 1}
-            onChange={(next) => patchBlock(i, next)}
-            onMove={(dir) => moveBlock(i, dir)}
-            onRemove={() => removeBlock(i)}
+            onPatch={(nb) => patch(i, nb)}
+            onMove={(d) => move(i, d)}
+            onRemove={() => remove(i)}
           />
         ))}
+        {blocks.length === 0 ? (
+          <p className="text-base text-ink-soft">
+            Empty note. Add text, or let AI add a visual below.
+          </p>
+        ) : null}
       </div>
 
       <input
@@ -344,16 +284,16 @@ export function NoteEditor({
       </div>
 
       <div className="mt-4 rounded-[var(--radius-card)] border-2 border-dashed border-line-strong p-4">
-        <p className="mb-3 text-sm font-bold text-ink-soft">Add a block</p>
+        <p className="mb-3 text-sm font-bold text-ink-soft">Add text</p>
         <div className="flex flex-wrap gap-2">
-          {KINDS.map(({ kind, label, Icon }) => (
+          {TEXT_KINDS.map(({ kind, label }) => (
             <button
               key={kind}
               type="button"
-              onClick={() => addBlock(kind)}
+              onClick={() => append(blank(kind))}
               className="inline-flex items-center gap-1.5 rounded-full border-2 border-line-strong bg-surface px-3 py-1.5 text-sm font-bold text-ink transition-colors hover:border-accent hover:text-accent"
             >
-              <Icon weight="bold" className="size-4" />
+              <PlusIcon weight="bold" className="size-4" />
               {label}
             </button>
           ))}
@@ -362,63 +302,8 @@ export function NoteEditor({
     </div>
   );
 }
-// __APPEND_3__
 
-const KIND_LABEL: Record<Kind, string> = {
-  heading: "Heading",
-  paragraph: "Paragraph",
-  bullets: "Bullets",
-  summary: "Summary",
-  keyterm: "Key term",
-  callout: "Callout",
-  formula: "Formula",
-  diagram: "Flow",
-  flowchart: "Flowchart",
-  mindmap: "Mindmap",
-  glossary: "Glossary",
-  image: "Image",
-  illustration: "Illustration",
-};
-
-function BlockCard({
-  block,
-  first,
-  last,
-  onChange,
-  onMove,
-  onRemove,
-}: {
-  block: NoteBlock;
-  first: boolean;
-  last: boolean;
-  onChange: (next: NoteBlock) => void;
-  onMove: (dir: -1 | 1) => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="rounded-[var(--radius-card)] border-2 border-line-strong bg-surface-2 p-4 shadow-[var(--shadow-card)]">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wide text-ink-soft">
-          {KIND_LABEL[block.kind]}
-        </span>
-        <div className="flex items-center gap-1">
-          <IconBtn label="Move up" disabled={first} onClick={() => onMove(-1)}>
-            <CaretUpIcon weight="bold" className="size-4" />
-          </IconBtn>
-          <IconBtn label="Move down" disabled={last} onClick={() => onMove(1)}>
-            <CaretDownIcon weight="bold" className="size-4" />
-          </IconBtn>
-          <IconBtn label="Delete block" onClick={onRemove} danger>
-            <TrashSimpleIcon weight="bold" className="size-4" />
-          </IconBtn>
-        </div>
-      </div>
-      <BlockFields block={block} onChange={onChange} />
-    </div>
-  );
-}
-
-function IconBtn({
+function Ctrl({
   children,
   label,
   onClick,
@@ -438,397 +323,218 @@ function IconBtn({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className={
-        "inline-flex size-8 items-center justify-center rounded-full border-2 border-line-strong bg-surface text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
-        (danger
+      className={cn(
+        "flex size-7 items-center justify-center rounded-full border-2 border-line-strong bg-surface text-ink shadow-[var(--shadow-card)] disabled:opacity-40",
+        danger
           ? "hover:border-coral hover:text-coral"
-          : "hover:border-accent hover:text-accent")
-      }
+          : "hover:border-accent hover:text-accent",
+      )}
     >
       {children}
     </button>
   );
 }
-// __APPEND_4__
 
-function BlockFields({
+function BlockRow({
   block,
-  onChange,
+  first,
+  last,
+  onPatch,
+  onMove,
+  onRemove,
 }: {
   block: NoteBlock;
-  onChange: (next: NoteBlock) => void;
+  first: boolean;
+  last: boolean;
+  onPatch: (b: NoteBlock) => void;
+  onMove: (d: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="group relative">
+      <div className="no-print absolute -top-3 right-2 z-10 flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <Ctrl label="Move up" disabled={first} onClick={() => onMove(-1)}>
+          <CaretUpIcon weight="bold" className="size-4" />
+        </Ctrl>
+        <Ctrl label="Move down" disabled={last} onClick={() => onMove(1)}>
+          <CaretDownIcon weight="bold" className="size-4" />
+        </Ctrl>
+        <Ctrl label="Delete" danger onClick={onRemove}>
+          <TrashSimpleIcon weight="bold" className="size-4" />
+        </Ctrl>
+      </div>
+      <EditBlock block={block} onPatch={onPatch} />
+    </div>
+  );
+}
+
+function EditBlock({
+  block,
+  onPatch,
+}: {
+  block: NoteBlock;
+  onPatch: (b: NoteBlock) => void;
 }) {
   switch (block.kind) {
+    case "summary":
+      return (
+        <div className="rounded-[var(--radius-card)] border-2 border-accent-weak-ink/15 bg-accent-weak p-5">
+          <Editable
+            value={block.text}
+            onCommit={(t) => onPatch({ ...block, text: t })}
+            placeholder="The big idea..."
+            className="text-[1.6rem] font-bold leading-snug text-accent-weak-ink"
+          />
+        </div>
+      );
     case "heading":
       return (
-        <input
+        <Editable
           value={block.text}
-          onChange={(e) => onChange({ ...block, text: e.target.value })}
+          onCommit={(t) => onPatch({ ...block, text: t })}
           placeholder="Section heading"
-          className={fieldCls}
+          className="inline-block border-b-4 border-lime-deep/50 pb-0.5 text-3xl font-bold text-ink"
         />
       );
-    case "summary":
     case "paragraph":
       return (
-        <textarea
+        <Editable
           value={block.text}
-          onChange={(e) => onChange({ ...block, text: e.target.value })}
-          placeholder={block.kind === "summary" ? "Short summary" : "Paragraph text"}
-          rows={block.kind === "summary" ? 2 : 4}
-          className={fieldCls + " resize-y"}
+          onCommit={(t) => onPatch({ ...block, text: t })}
+          placeholder="Write..."
+          className="text-ink-soft"
         />
       );
     case "bullets":
       return (
-        <RowList
-          rows={block.items}
-          onRows={(items) => onChange({ ...block, items })}
-          placeholder="Bullet point"
+        <BulletsEdit
+          items={block.items}
+          onItems={(items) => onPatch({ ...block, items })}
         />
-      );
-    case "formula":
-      return (
-        <div className="space-y-2">
-          <input
-            value={block.label}
-            onChange={(e) => onChange({ ...block, label: e.target.value })}
-            placeholder="Label (e.g. Throughput)"
-            className={fieldCls}
-          />
-          <input
-            value={block.expr}
-            onChange={(e) => onChange({ ...block, expr: e.target.value })}
-            placeholder="Expression (e.g. n / total_time)"
-            className={fieldCls + " font-mono"}
-          />
-        </div>
-      );
-    case "diagram":
-      return (
-        <div className="space-y-2">
-          <input
-            value={block.caption}
-            onChange={(e) => onChange({ ...block, caption: e.target.value })}
-            placeholder="Diagram caption"
-            className={fieldCls}
-          />
-          <RowList
-            rows={block.nodes}
-            onRows={(nodes) => onChange({ ...block, nodes })}
-            placeholder="Flow step"
-          />
-        </div>
       );
     case "keyterm":
       return (
-        <div className="space-y-2">
-          <input
-            value={block.term}
-            onChange={(e) => onChange({ ...block, term: e.target.value })}
-            placeholder="Term (e.g. Deadlock)"
-            className={fieldCls}
-          />
-          <textarea
-            value={block.definition}
-            onChange={(e) => onChange({ ...block, definition: e.target.value })}
-            placeholder="Plain-English definition"
-            rows={2}
-            className={fieldCls + " resize-y"}
-          />
+        <div className="rounded-[var(--radius-input)] border-2 border-dashed border-accent/40 bg-surface p-4">
+          <Editable value={block.term} onCommit={(t) => onPatch({ ...block, term: t })} placeholder="Term" className="font-bold text-accent" />
+          <Editable value={block.definition} onCommit={(d) => onPatch({ ...block, definition: d })} placeholder="Definition" className="mt-1 text-ink" />
         </div>
       );
     case "callout":
       return (
-        <div className="space-y-2">
+        <div className="rounded-[var(--radius-input)] border-2 border-line bg-surface p-4">
           <select
             value={block.tone}
             onChange={(e) =>
-              onChange({ ...block, tone: e.target.value as typeof block.tone })
+              onPatch({ ...block, tone: e.target.value as typeof block.tone })
             }
-            className={fieldCls}
+            className="mb-2 rounded-full border-2 border-line-strong bg-surface px-2 py-1 text-xs font-bold text-ink outline-none"
           >
             <option value="tip">Tip</option>
             <option value="important">Why it matters</option>
             <option value="example">Example</option>
             <option value="warning">Watch out</option>
           </select>
-          <textarea
-            value={block.text}
-            onChange={(e) => onChange({ ...block, text: e.target.value })}
-            placeholder="Callout text"
-            rows={3}
-            className={fieldCls + " resize-y"}
-          />
+          <Editable value={block.text} onCommit={(t) => onPatch({ ...block, text: t })} placeholder="Callout text" className="text-ink" />
+        </div>
+      );
+    case "formula":
+      return (
+        <div className="rounded-[var(--radius-input)] bg-ink p-5 text-paper">
+          <Editable value={block.label} onCommit={(l) => onPatch({ ...block, label: l })} placeholder="Label" className="font-display text-xs font-bold uppercase tracking-wide text-lime" />
+          <Editable value={block.expr} onCommit={(x) => onPatch({ ...block, expr: x })} placeholder="LaTeX, e.g. a^2 + b^2 = c^2" className="mt-2 font-mono text-[16px]" />
         </div>
       );
     case "glossary":
       return (
-        <PairList
-          rows={block.items}
-          onRows={(items) => onChange({ ...block, items })}
+        <GlossaryEdit
+          items={block.items}
+          onItems={(items) => onPatch({ ...block, items })}
         />
       );
-    case "flowchart":
-      return (
-        <div className="space-y-2">
-          <input
-            value={block.caption}
-            onChange={(e) => onChange({ ...block, caption: e.target.value })}
-            placeholder="Flowchart caption"
-            className={fieldCls}
-          />
-          <StepList
-            steps={block.steps}
-            onSteps={(steps) => onChange({ ...block, steps })}
-          />
-        </div>
-      );
-    case "mindmap":
-      return (
-        <div className="space-y-2">
-          <input
-            value={block.center}
-            onChange={(e) => onChange({ ...block, center: e.target.value })}
-            placeholder="Central idea"
-            className={fieldCls}
-          />
-          <BranchList
-            branches={block.branches}
-            onBranches={(branches) => onChange({ ...block, branches })}
-          />
-        </div>
-      );
-    case "image":
-      return (
-        <div className="space-y-2">
-          {block.src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={block.src}
-              alt={block.alt}
-              className="max-h-48 rounded-[var(--radius-input)] border-2 border-line"
-            />
-          ) : null}
-          <input
-            value={block.alt}
-            onChange={(e) => onChange({ ...block, alt: e.target.value })}
-            placeholder="Describe the image (alt text)"
-            className={fieldCls}
-          />
-          <input
-            value={block.caption ?? ""}
-            onChange={(e) => onChange({ ...block, caption: e.target.value })}
-            placeholder="Caption (optional)"
-            className={fieldCls}
-          />
-        </div>
-      );
-    case "illustration":
-      return (
-        <div className="space-y-2">
-          <div
-            className="max-h-48 overflow-hidden rounded-[var(--radius-input)] border-2 border-line bg-surface [&_svg]:h-auto [&_svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: block.svg }}
-          />
-          <input
-            value={block.caption ?? ""}
-            onChange={(e) => onChange({ ...block, caption: e.target.value })}
-            placeholder="Caption (optional)"
-            className={fieldCls}
-          />
-        </div>
-      );
+    default:
+      return <Block block={block} />;
   }
 }
-// __APPEND_5__
 
-function RowList({
-  rows,
-  onRows,
-  placeholder,
+function BulletsEdit({
+  items,
+  onItems,
 }: {
-  rows: string[];
-  onRows: (rows: string[]) => void;
-  placeholder: string;
+  items: string[];
+  onItems: (v: string[]) => void;
 }) {
-  const setRow = (i: number, v: string) =>
-    onRows(rows.map((r, j) => (j === i ? v : r)));
-  const removeRow = (i: number) => onRows(rows.filter((_, j) => j !== i));
-  const addRow = () => onRows([...rows, ""]);
-
   return (
-    <div className="space-y-2">
-      {rows.map((row, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <input
-            value={row}
-            onChange={(e) => setRow(i, e.target.value)}
-            placeholder={placeholder}
-            className={fieldCls}
+    <ul className="flex flex-col gap-2.5">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-start gap-3 text-ink">
+          <span className="mt-3 h-2.5 w-2.5 shrink-0 rounded-full bg-lime-deep" />
+          <Editable
+            value={item}
+            onCommit={(v) => onItems(items.map((x, j) => (j === i ? v : x)))}
+            placeholder="Point"
+            className="min-w-0 flex-1"
           />
-          <IconBtn
-            label="Remove row"
-            onClick={() => removeRow(i)}
-            disabled={rows.length <= 1}
-            danger
+          <button
+            type="button"
+            aria-label="Remove point"
+            onClick={() => onItems(items.filter((_, j) => j !== i))}
+            className="no-print mt-1 text-ink-faint transition-colors hover:text-coral"
           >
-            <TrashSimpleIcon weight="bold" className="size-4" />
-          </IconBtn>
-        </div>
+            <TrashSimpleIcon className="size-4" />
+          </button>
+        </li>
       ))}
       <button
         type="button"
-        onClick={addRow}
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
+        onClick={() => onItems([...items, ""])}
+        className="no-print inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:text-accent-hover"
       >
         <PlusIcon weight="bold" className="size-4" />
-        Add row
+        Add point
       </button>
-    </div>
+    </ul>
   );
 }
 
-function PairList({
-  rows,
-  onRows,
+function GlossaryEdit({
+  items,
+  onItems,
 }: {
-  rows: { term: string; definition: string }[];
-  onRows: (rows: { term: string; definition: string }[]) => void;
+  items: { term: string; definition: string }[];
+  onItems: (v: { term: string; definition: string }[]) => void;
 }) {
-  const set = (i: number, patch: Partial<{ term: string; definition: string }>) =>
-    onRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
-  const remove = (i: number) => onRows(rows.filter((_, j) => j !== i));
-  const add = () => onRows([...rows, { term: "", definition: "" }]);
+  const set = (i: number, p: Partial<{ term: string; definition: string }>) =>
+    onItems(items.map((it, j) => (j === i ? { ...it, ...p } : it)));
   return (
-    <div className="space-y-2">
-      {rows.map((row, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <input
-            value={row.term}
-            onChange={(e) => set(i, { term: e.target.value })}
-            placeholder="Term"
-            className={fieldCls}
-          />
-          <input
-            value={row.definition}
-            onChange={(e) => set(i, { definition: e.target.value })}
-            placeholder="Definition"
-            className={fieldCls}
-          />
-          <IconBtn label="Remove" onClick={() => remove(i)} disabled={rows.length <= 1} danger>
-            <TrashSimpleIcon weight="bold" className="size-4" />
-          </IconBtn>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={add}
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
-      >
-        <PlusIcon weight="bold" className="size-4" />
-        Add term
-      </button>
-    </div>
-  );
-}
-
-function StepList({
-  steps,
-  onSteps,
-}: {
-  steps: Extract<NoteBlock, { kind: "flowchart" }>["steps"];
-  onSteps: (steps: Extract<NoteBlock, { kind: "flowchart" }>["steps"]) => void;
-}) {
-  const setStep = (
-    i: number,
-    patch: Partial<{ text: string; type: FlowStepType }>,
-  ) => onSteps(steps.map((s, j) => (j === i ? { ...s, ...patch } : s)));
-  const remove = (i: number) => onSteps(steps.filter((_, j) => j !== i));
-  const add = () => onSteps([...steps, { text: "", type: "process" }]);
-  return (
-    <div className="space-y-2">
-      {steps.map((step, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <select
-            value={step.type}
-            onChange={(e) => setStep(i, { type: e.target.value as FlowStepType })}
-            className={fieldCls}
-          >
-            <option value="start">Start</option>
-            <option value="process">Process</option>
-            <option value="decision">Decision</option>
-            <option value="io">In/Out</option>
-            <option value="end">End</option>
-          </select>
-          <input
-            value={step.text}
-            onChange={(e) => setStep(i, { text: e.target.value })}
-            placeholder="Step"
-            className={fieldCls}
-          />
-          <IconBtn label="Remove step" onClick={() => remove(i)} disabled={steps.length <= 2} danger>
-            <TrashSimpleIcon weight="bold" className="size-4" />
-          </IconBtn>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={add}
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
-      >
-        <PlusIcon weight="bold" className="size-4" />
-        Add step
-      </button>
-    </div>
-  );
-}
-
-function BranchList({
-  branches,
-  onBranches,
-}: {
-  branches: Extract<NoteBlock, { kind: "mindmap" }>["branches"];
-  onBranches: (b: Extract<NoteBlock, { kind: "mindmap" }>["branches"]) => void;
-}) {
-  const setBranch = (
-    i: number,
-    patch: Partial<{ label: string; children: string[] }>,
-  ) => onBranches(branches.map((b, j) => (j === i ? { ...b, ...patch } : b)));
-  const remove = (i: number) => onBranches(branches.filter((_, j) => j !== i));
-  const add = () => onBranches([...branches, { label: "", children: [""] }]);
-  return (
-    <div className="space-y-3">
-      {branches.map((br, i) => (
-        <div key={i} className="rounded-[var(--radius-input)] border-2 border-line p-2">
-          <div className="flex items-center gap-2">
-            <input
-              value={br.label}
-              onChange={(e) => setBranch(i, { label: e.target.value })}
-              placeholder="Branch label"
-              className={fieldCls}
-            />
-            <IconBtn label="Remove branch" onClick={() => remove(i)} disabled={branches.length <= 1} danger>
-              <TrashSimpleIcon weight="bold" className="size-4" />
-            </IconBtn>
+    <div className="rounded-[var(--radius-card)] border-2 border-line bg-surface p-4">
+      <div className="mb-2 flex items-center gap-2 font-display text-sm font-bold text-ink">
+        <BookOpenIcon size={16} weight="duotone" className="text-accent" />
+        Glossary
+      </div>
+      <div className="flex flex-col gap-2">
+        {items.map((it, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <Editable value={it.term} onCommit={(v) => set(i, { term: v })} placeholder="Term" className="w-1/3 shrink-0 font-bold text-ink" />
+            <Editable value={it.definition} onCommit={(v) => set(i, { definition: v })} placeholder="Definition" className="min-w-0 flex-1 text-ink-soft" />
+            <button
+              type="button"
+              aria-label="Remove term"
+              onClick={() => onItems(items.filter((_, j) => j !== i))}
+              className="no-print mt-1 text-ink-faint transition-colors hover:text-coral"
+            >
+              <TrashSimpleIcon className="size-4" />
+            </button>
           </div>
-          <div className="mt-2 pl-2">
-            <RowList
-              rows={br.children}
-              onRows={(children) => setBranch(i, { children })}
-              placeholder="Related point"
-            />
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={add}
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-accent transition-colors hover:text-accent-hover"
-      >
-        <PlusIcon weight="bold" className="size-4" />
-        Add branch
-      </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onItems([...items, { term: "", definition: "" }])}
+          className="no-print inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:text-accent-hover"
+        >
+          <PlusIcon weight="bold" className="size-4" />
+          Add term
+        </button>
+      </div>
     </div>
   );
 }
@@ -856,4 +562,3 @@ function GenBtn({
     </button>
   );
 }
-

@@ -94,7 +94,7 @@ export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
   );
 }
 
-function Block({ block }: { block: NoteBlock }) {
+export function Block({ block }: { block: NoteBlock }) {
   switch (block.kind) {
     case "summary":
       return (

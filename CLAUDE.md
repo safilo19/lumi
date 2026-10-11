@@ -111,6 +111,13 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Inline WYSIWYG note editor (not committed): `note-editor.tsx`
+  rewritten so the note is edited in place as it looks — text is editable via an
+  uncontrolled contentEditable `Editable` (commits on blur, no caret jumps), each
+  block has hover move/delete controls, visuals render read-only via the exported
+  `Block` from `note-blocks.tsx`. Keeps the structured block model (flashcards/
+  quiz/search still work). Landing `note-preview.tsx` refreshed to handwriting.
+  Build (clean), lint, tsc green.
 - 2026-10-11 — Media + AI visuals + interactive diagrams (not committed): added
   `image` + `illustration` note blocks. Editor gained an "Add with AI and media"
   panel: AI-generate illustration/flowchart/mindmap/diagram from the note
