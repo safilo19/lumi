@@ -7,6 +7,7 @@ import {
   ArrowRightIcon,
   CardsThreeIcon,
   ExamIcon,
+  NotePencilIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
@@ -57,7 +58,13 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-2 gap-3">
+      <section className="mt-6 grid grid-cols-3 gap-3">
+        <ToolLink
+          href="/new"
+          Icon={NotePencilIcon}
+          label="New note"
+          tint="bg-accent-weak text-accent"
+        />
         <ToolLink
           href="/review"
           Icon={CardsThreeIcon}

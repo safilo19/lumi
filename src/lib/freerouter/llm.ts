@@ -274,6 +274,71 @@ export async function generateNote(transcript: string): Promise<NoteResult> {
 }
 
 /**
+ * Turn scanned images or PDF pages (a student's handwritten/printed notes or
+ * lecture slides) into a Lumi note, using Gemini's vision/document reading.
+ * `files` are base64 payloads with their mime type.
+ */
+export async function generateNoteFromMedia(
+  files: { data: string; mimeType: string }[],
+): Promise<NoteResult> {
+  const model = "gemini-2.0-flash";
+  const key = keyFor("gemini");
+  const attempts: Attempt[] = [];
+  if (!key) {
+    attempts.push({ provider: "gemini", model, ok: false, ms: 0, error: "no api key" });
+    throw new AllProvidersFailedError("scan", attempts);
+  }
+  const started = Date.now();
+  try {
+    const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: NOTE_SYSTEM_PROMPT }] },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: "These images or PDF pages are a student's handwritten or printed notes, or lecture slides. Read ALL of them carefully and produce the Lumi notes JSON in English.",
+              },
+              ...files.map((f) => ({
+                inlineData: { mimeType: f.mimeType, data: f.data },
+              })),
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: TEMPERATURE,
+          maxOutputTokens: MAX_TOKENS,
+        },
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 180)}`);
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts
+      ?.map((p: { text?: string }) => p.text ?? "")
+      .join("");
+    if (!text) throw new Error("empty response");
+    const note = sanitizeNote(text);
+    attempts.push({ provider: "gemini", model, ok: true, ms: Date.now() - started });
+    return { ...note, attempts, provider: "gemini", model };
+  } catch (err) {
+    attempts.push({
+      provider: "gemini",
+      model,
+      ok: false,
+      ms: Date.now() - started,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw new AllProvidersFailedError("scan", attempts);
+  }
+}
+
+/**
  * Generic chat completion through the same failover chain. Used by the quiz
  * and ask-your-notes features. `json` forces JSON-object output when true.
  */

@@ -118,7 +118,15 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Record screen overhaul (not committed): real-time canvas
+- 2026-10-11 — Capture hub `/new` (not committed): one page to create a note by
+  Write (blank → editor), Scan (photos of handwritten/printed notes), Import PDF
+  or slides, Upload audio, or Paste text / a link. New routes: `/api/scan`
+  (Gemini vision/doc → note, via `generateNoteFromMedia` in `llm.ts`) and
+  `/api/notes/from-text` (pasted text or a fetched URL → note; `mode:"revision"`
+  for cheat-sheets). Course detail gained a "Revision sheet" button (merges the
+  course's notes). Sidebar + dashboard link to `/new`. Deferred (chosen but not
+  built): study reminders/notifications (needs push infra; only partial on PWA).
+- 2026-10-11 — Record screen overhaul (pushed `c9af589`): real-time canvas
   visualizer `components/app/orbital-bloom.tsx` (Web Audio AnalyserNode →
   concentric rings + rotating frequency petals) behind the record button;
   Pause/Resume (MediaRecorder, feature-detected), "Mark moment" bookmarks,
@@ -167,21 +175,6 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   Openverse). Diagrams now render in a shared `FigureFrame` with expand-to-
   fullscreen; mindmap branches are collapsible (`<details>`). `blocksToText`
   exported from `lib/notes/text.ts`. Build, lint, tsc green.
-- 2026-10-11 — Handwriting font fix + note visual redesign (committed `e7c5479`,
-  NOT yet pushed — prod-deploy gate): swapped Patrick Hand (single static weight,
-  wasn't applying) for the Caveat variable font (`--font-hand-src` → `--font-hand`),
-  applied across note view, note cards, and export; scaled note typography.
-  Added `components/app/note-art.tsx` — a seeded generative SVG header per note
-  (deterministic from note id). Build, lint, tsc green.
-- 2026-10-11 — Study features + diagram polish (Phases 6-9 + 3; not committed):
-  flashcards + SM-2 spaced repetition (`/review`, `lib/local/cards.ts`,
-  `lib/study/sm2.ts`, `cards` IndexedDB store, DB v2); AI quiz (`/quiz`,
-  `/api/quiz`); ask-your-notes AI chat with local keyword retrieval (`/ask`,
-  `/api/ask`); global search + `tags` on notes (`/search`, topbar wired,
-  editor tag input, chips on note view). FreeRouter gained `freeChat`.
-  Note page gained Study/Quiz buttons; sidebar + dashboard gained the tools.
-  Polished flowchart (diamond decisions, arrow connectors) + mindmap connector.
-  Build, lint, tsc green.
 - 2026-10-11 — First-run tour (Phase 5; not committed): animated 5-step
   welcome walkthrough (`components/app/first-run-tour.tsx`, `motion`/
   `AnimatePresence`, respects reduced motion) mounted in `(app)/layout.tsx`,

@@ -1,12 +1,14 @@
 "use client";
-import { use } from "react";
-import { notFound } from "next/navigation";
+import { use, useState } from "react";
+import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, MicrophoneIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, MicrophoneIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/app/note-card";
+import { createNote } from "@/lib/local/notes";
 import { useCourses } from "@/lib/local/use-courses";
 import { useCourseNotes } from "@/lib/local/use-notes";
+import { noteToPlainText } from "@/lib/notes/text";
 
 export default function CoursePage({
   params,
@@ -16,6 +18,8 @@ export default function CoursePage({
   const { id } = use(params);
   const { data: courses, loading } = useCourses();
   const { data: courseNotes } = useCourseNotes(id);
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
   const course = courses.find((c) => c.id === id);
   if (loading) {
     return (
@@ -25,6 +29,34 @@ export default function CoursePage({
     );
   }
   if (!course) notFound();
+  const courseName = course.name;
+
+  async function revision() {
+    if (!courseNotes.length || busy) return;
+    setBusy(true);
+    try {
+      const text = courseNotes
+        .map((n) => `## ${n.title}\n${noteToPlainText(n)}`)
+        .join("\n\n");
+      const res = await fetch("/api/notes/from-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, mode: "revision" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed.");
+      const saved = await createNote({
+        title: data.note.title || `${courseName} revision`,
+        courseId: id,
+        language: data.note.language ?? "English",
+        blocks: data.note.blocks,
+        durationMin: 0,
+      });
+      router.push(`/notes/${saved.id}`);
+    } catch {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -43,12 +75,20 @@ export default function CoursePage({
             {course.name}
           </h1>
         </div>
-        <Link href="/record">
-          <Button variant="secondary">
-            <MicrophoneIcon size={17} weight="fill" />
-            Record for this course
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/record">
+            <Button variant="secondary">
+              <MicrophoneIcon size={17} weight="fill" />
+              Record
+            </Button>
+          </Link>
+          {courseNotes.length > 0 ? (
+            <Button variant="lime" onClick={revision} disabled={busy}>
+              <SparkleIcon size={17} weight="fill" />
+              {busy ? "Building…" : "Revision sheet"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">

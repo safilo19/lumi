@@ -10,6 +10,7 @@ import {
   GearSixIcon,
   CardsThreeIcon,
   ExamIcon,
+  NotePencilIcon,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/brand/logo";
 import { useCourses } from "@/lib/local/use-courses";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: SquaresFourIcon },
+  { href: "/new", label: "New note", icon: NotePencilIcon },
   { href: "/record", label: "New recording", icon: MicrophoneIcon },
   { href: "/review", label: "Review", icon: CardsThreeIcon },
   { href: "/quiz", label: "Quiz me", icon: ExamIcon },

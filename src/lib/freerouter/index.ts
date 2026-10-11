@@ -2,7 +2,7 @@
 // and the API routes consume: one shared, failover-backed implementation.
 
 export { transcribeAudio, type TranscribeInput } from "./stt";
-export { generateNote, freeChat, extractJson } from "./llm";
+export { generateNote, generateNoteFromMedia, freeChat, extractJson } from "./llm";
 export {
   AllProvidersFailedError,
   type Attempt,
