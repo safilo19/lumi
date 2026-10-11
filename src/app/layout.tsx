@@ -3,6 +3,7 @@ import { Caveat, Fraunces, Fredoka, Nunito } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import Script from "next/script";
 import { PwaUpdater } from "@/components/app/pwa-updater";
+import { SplashScreen } from "@/components/app/splash-screen";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
         {children}
+        <SplashScreen />
         <PwaUpdater />
       </body>
     </html>

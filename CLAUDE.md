@@ -125,6 +125,10 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
+- 2026-10-11 — Animated launch splash: `components/app/splash-screen.tsx` (motion
+  — glowing core + orbiting sparks, Lumi wordmark, shimmer progress bar 0→100%,
+  fades out), mounted in root `layout.tsx`. Reduced-motion safe; shows on cold load.
+
 - 2026-10-11 — Real study streak: `lib/local/streak.ts` (`useStreak` marks today
   active in the `meta` store, counts consecutive days); dashboard badge now live
   (was a hardcoded "4-day streak"). Exported `META` from `notes.ts`.
