@@ -68,6 +68,8 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   server-side; the note's id is assigned client-side).
 - `src/app/api/quiz/`, `src/app/api/ask/` — AI quiz generation + ask-your-notes
   (both call FreeRouter `freeChat`; client sends note context, keys stay server).
+  `src/app/api/brief/` (TL;DR + key points) and `src/app/api/translate/`
+  (string-array translate, structure-preserving) back the premium note tools.
 - `src/app/api/visual/` — AI generates one diagram/flowchart/mindmap/illustration
   (SVG) block from note context. `src/app/api/photo/` — free no-key image search
   (Openverse). Note blocks now include `image` + `illustration`.
@@ -76,8 +78,8 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
   (spaced repetition) + `quiz.ts` (type). `src/lib/notes/text.ts` —
   `noteToPlainText` (AI context + search haystack).
 - `src/app/api/mcp/` — MCP server endpoint.
-- `src/lib/local/` — IndexedDB store (DB `lumi`, v3; stores: `notes`, `meta`,
-  `cards`, `courses`). `notes.ts` (incl. `deleteNote`/`restoreNote`),
+- `src/lib/local/` — IndexedDB store (DB `lumi`, v4; stores: `notes`, `meta`,
+  `cards`, `courses`, `highlights`). `notes.ts` (incl. `deleteNote`/`restoreNote`),
   `courses.ts` (user-created courses, no defaults), loader hooks `use-notes.ts`
   + `use-courses.ts` (`useCourses` + `addCourse`/`removeCourse`, shared cache).
 - `src/lib/freerouter/` — AI pipeline / provider failover.
@@ -118,14 +120,20 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Note view premium redesign, Phase A (editorial + cinematic):
-  Fraunces serif (`--font-serif`) + editorial CSS (`.note-dropcap`,
-  `.editorial-rule`, `.note-aurora`); `note-masthead.tsx` (serif title, animated
-  aurora, read-time count-up), `reading-progress.tsx` (scroll bar + back-to-top);
-  `note-blocks.tsx` serif headings + drop cap + per-block scroll-reveal (`Reveal`);
-  note page shimmer skeleton. User picked: Editorial luxe + Cinematic + all 8 tools.
-  Pending: Phase B (focus mode, read-aloud, highlight/annotate, TOC) + Phase C
-  (select-to-AI, TL;DR + key points, translate, section→flashcards/quiz).
+- 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic; all 8
+  tools). A: Fraunces serif, editorial CSS (`.note-dropcap`/`.editorial-rule`/
+  `.note-aurora`/`.reader-serif`), `note-masthead.tsx`, `reading-progress.tsx`,
+  serif headings + drop cap + per-block scroll-reveal, shimmer skeleton. B:
+  `note-toc.tsx` (sticky TOC + per-section flashcards/quiz), `focus-reader.tsx`
+  (fullscreen; font/size/width/theme via token overrides), `read-aloud.tsx`
+  (SpeechSynthesis teleprompter), highlights + margin notes (`highlights` store
+  v4, `lib/local/highlights.ts`, DOM apply `lib/notes/highlight-dom.ts`). C:
+  `selection-tools.tsx` (highlight + Explain/Simplify/Expand/Define via `/api/ask`),
+  `note-brief.tsx` (`/api/brief`, cached on `note.brief`), translate (`/api/translate`
+  + `lib/notes/translate.ts`), section→flashcards (`generateCardsForBlocks`) /
+  quiz (sessionStorage `lumi-quiz-scope`, `?scoped=1`). Orchestrated by
+  `note-reader.tsx`; `#note-print-area`/`.no-print` preserved. Build/lint/tsc green,
+  `/api/brief` + `/api/translate` tested live.
 
 - 2026-10-11 — Scanner: instant + lightweight auto-crop + autofocus (pushed): no
   OpenCV (the 10MB wasm hung on "Preparing"). `doc-scanner.tsx` is dependency-free —

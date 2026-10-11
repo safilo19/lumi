@@ -74,9 +74,11 @@ export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
   return (
     <div className="flex flex-col gap-7 font-sans text-[1.075rem] leading-[1.85] text-ink">
       {blocks.map((block, i) => (
-        <Reveal key={i} delay={Math.min(i, 6) * 0.04} y={16}>
-          <Block block={block} lead={i === leadIndex} />
-        </Reveal>
+        <div key={i} data-bi={i} id={`b-${i}`} className="scroll-mt-24">
+          <Reveal delay={Math.min(i, 6) * 0.04} y={16}>
+            <Block block={block} lead={i === leadIndex} />
+          </Reveal>
+        </div>
       ))}
     </div>
   );

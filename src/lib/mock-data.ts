@@ -40,6 +40,8 @@ export type Note = {
   language: "English" | "Urdu" | "Mixed";
   tags?: string[];
   blocks: NoteBlock[];
+  // AI "at a glance" summary, generated on demand and cached on the note.
+  brief?: { tldr: string; keyPoints: string[] };
 };
 
 export type Course = {

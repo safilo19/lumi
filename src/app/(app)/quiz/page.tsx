@@ -47,8 +47,25 @@ export default function QuizPage() {
   }, []);
 
   useEffect(() => {
-    const noteId = new URLSearchParams(window.location.search).get("note");
+    const params = new URLSearchParams(window.location.search);
+    const noteId = params.get("note");
     if (!noteId) return;
+    // Section-scoped quiz: the note view stashes the section's text so we quiz
+    // just that part instead of the whole note.
+    if (params.get("scoped") === "1") {
+      try {
+        const raw = sessionStorage.getItem("lumi-quiz-scope");
+        if (raw) {
+          const scope = JSON.parse(raw) as { noteId?: string; context?: string };
+          sessionStorage.removeItem("lumi-quiz-scope");
+          if (scope.context && scope.noteId === noteId) {
+            const ctx = scope.context;
+            queueMicrotask(() => generate(ctx));
+            return;
+          }
+        }
+      } catch {}
+    }
     let on = true;
     getNote(noteId).then((n) => {
       if (on && n) generate(noteToPlainText(n));

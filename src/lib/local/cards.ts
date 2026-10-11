@@ -1,4 +1,4 @@
-import type { Note } from "@/lib/mock-data";
+import type { Note, NoteBlock } from "@/lib/mock-data";
 import { CARDS, openDB, reqResult, txDone } from "./notes";
 import { nextSchedule, type Grade } from "@/lib/study/sm2";
 
@@ -38,10 +38,13 @@ export async function countDue(): Promise<number> {
   return (await dueCards()).length;
 }
 
-// Deterministic, offline card generation from a note's structured blocks.
-function pairsFromNote(note: Note): { front: string; back: string }[] {
+// Deterministic, offline card generation from structured blocks.
+function pairsFromBlocks(
+  blocks: NoteBlock[],
+  title: string,
+): { front: string; back: string }[] {
   const out: { front: string; back: string }[] = [];
-  for (const b of note.blocks) {
+  for (const b of blocks) {
     if (b.kind === "keyterm")
       out.push({ front: `What is ${b.term}?`, back: b.definition });
     else if (b.kind === "glossary")
@@ -51,22 +54,29 @@ function pairsFromNote(note: Note): { front: string; back: string }[] {
       out.push({ front: `Formula - ${b.label}`, back: b.expr });
   }
   if (!out.length) {
-    const s = note.blocks.find((b) => b.kind === "summary");
+    const s = blocks.find((b) => b.kind === "summary");
     if (s && s.kind === "summary")
-      out.push({ front: `Summary: ${note.title}`, back: s.text });
+      out.push({ front: `Summary: ${title}`, back: s.text });
   }
   return out;
 }
 
-// Create flashcards for a note, skipping fronts that already exist for it.
-// Returns the number of new cards created.
-export async function generateCardsForNote(note: Note): Promise<number> {
+function pairsFromNote(note: Note): { front: string; back: string }[] {
+  return pairsFromBlocks(note.blocks, note.title);
+}
+
+// Shared writer: persist a set of front/back pairs as cards for a note,
+// skipping fronts that already exist for it. Returns how many were created.
+async function persistPairs(
+  note: Note,
+  pairs: { front: string; back: string }[],
+): Promise<number> {
   const db = await openDB();
   const have = new Set(
     (await allCards()).filter((c) => c.noteId === note.id).map((c) => c.front),
   );
   const nowIso = new Date().toISOString();
-  const fresh = pairsFromNote(note).filter((p) => !have.has(p.front));
+  const fresh = pairs.filter((p) => !have.has(p.front));
   if (!fresh.length) return 0;
   const tx = db.transaction(CARDS, "readwrite");
   const store = tx.objectStore(CARDS);
@@ -88,6 +98,19 @@ export async function generateCardsForNote(note: Note): Promise<number> {
   }
   await txDone(tx);
   return fresh.length;
+}
+
+// Create flashcards for a whole note.
+export async function generateCardsForNote(note: Note): Promise<number> {
+  return persistPairs(note, pairsFromNote(note));
+}
+
+// Create flashcards for a single section (a subset of a note's blocks).
+export async function generateCardsForBlocks(
+  note: Note,
+  blocks: NoteBlock[],
+): Promise<number> {
+  return persistPairs(note, pairsFromBlocks(blocks, note.title));
 }
 
 export async function reviewCard(id: string, grade: Grade): Promise<void> {

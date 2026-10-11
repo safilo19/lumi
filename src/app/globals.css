@@ -298,6 +298,14 @@ body {
     animation: none;
   }
 }
+/* Focus-reader serif toggle: override children of the sans container. */
+.reader-serif p,
+.reader-serif li,
+.reader-serif dt,
+.reader-serif dd,
+.reader-serif blockquote {
+  font-family: var(--font-serif);
+}
 
 /* Export paper styles — set via data-paper on <html> during export so both the
    on-screen capture (PNG) and the print snapshot (PDF) pick them up. */

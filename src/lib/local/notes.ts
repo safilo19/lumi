@@ -7,11 +7,12 @@
 import { type Note, type NoteBlock } from "@/lib/mock-data";
 
 const DB_NAME = "lumi";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const NOTES = "notes";
 const META = "meta";
 export const CARDS = "cards";
 export const COURSES = "courses";
+export const HIGHLIGHTS = "highlights";
 
 function byRecencyDesc(a: Note, b: Note) {
   return +new Date(b.recordedAt) - +new Date(a.recordedAt);
@@ -49,6 +50,10 @@ export function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(META)) db.createObjectStore(META, { keyPath: "key" });
       if (!db.objectStoreNames.contains(CARDS)) db.createObjectStore(CARDS, { keyPath: "id" });
       if (!db.objectStoreNames.contains(COURSES)) db.createObjectStore(COURSES, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(HIGHLIGHTS)) {
+        const hs = db.createObjectStore(HIGHLIGHTS, { keyPath: "id" });
+        hs.createIndex("noteId", "noteId", { unique: false });
+      }
     };
     open.onsuccess = () => resolve(open.result);
     open.onerror = () => reject(open.error);
@@ -148,6 +153,7 @@ export type UpdateNoteInput = {
   title?: string;
   blocks?: NoteBlock[];
   tags?: string[];
+  brief?: Note["brief"];
 };
 
 export async function updateNote(
@@ -162,6 +168,7 @@ export async function updateNote(
     title: patch.title?.trim() || current.title,
     blocks: patch.blocks ?? current.blocks,
     tags: patch.tags ?? current.tags,
+    brief: patch.brief ?? current.brief,
   };
   const tx = db.transaction(NOTES, "readwrite");
   tx.objectStore(NOTES).put(next);
