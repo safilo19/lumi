@@ -83,7 +83,7 @@ const flowStyles = {
 
 export function NoteBlocks({ blocks }: { blocks: NoteBlock[] }) {
   return (
-    <div className="flex flex-col gap-6 font-hand text-[1.15rem] leading-relaxed text-ink">
+    <div className="flex flex-col gap-6 font-hand text-[1.35rem] leading-relaxed text-ink">
       {blocks.map((block, i) => (
         <Block key={i} block={block} />
       ))}
@@ -100,14 +100,14 @@ function Block({ block }: { block: NoteBlock }) {
             <SparkleIcon size={16} weight="fill" />
             The big idea
           </div>
-          <p className="mt-2 text-[1.3rem] font-bold leading-snug text-accent-weak-ink">
+          <p className="mt-2 text-[1.7rem] font-bold leading-snug text-accent-weak-ink">
             {block.text}
           </p>
         </section>
       );
     case "heading":
       return (
-        <h2 className="mt-2 inline-block border-b-4 border-lime-deep/50 pb-0.5 text-2xl text-ink">
+        <h2 className="mt-2 inline-block border-b-4 border-lime-deep/50 pb-0.5 text-3xl font-bold text-ink">
           {block.text}
         </h2>
       );

@@ -153,7 +153,7 @@
   --font-display: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-hand: var(--font-patrick-hand), "Patrick Hand", ui-rounded, cursive;
+  --font-hand: var(--font-hand-src), "Caveat", ui-rounded, cursive;
 
   --radius-card: 26px;
   --radius-input: 16px;

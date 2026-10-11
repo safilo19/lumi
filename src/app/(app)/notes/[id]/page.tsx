@@ -9,6 +9,7 @@ import {
   UserIcon,
 } from "@phosphor-icons/react";
 import { NoteBlocks } from "@/components/app/note-blocks";
+import { NoteArt } from "@/components/app/note-art";
 import { NoteToolbar } from "@/components/app/note-toolbar";
 import { useNote } from "@/lib/local/use-notes";
 import { courseById } from "@/lib/mock-data";
@@ -42,14 +43,18 @@ export default function NotePage({
         {course ? course.name : "Dashboard"}
       </Link>
 
-      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+      <div className="mt-4 h-24 w-full overflow-hidden rounded-[var(--radius-card)] border-2 border-line sm:h-32">
+        <NoteArt seed={note.id} className="h-full w-full" />
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs">
             <span className="rounded-full bg-accent-weak px-2.5 py-1 font-medium text-accent-weak-ink">
               {course?.code}
             </span>
           </div>
-          <h1 className="mt-3 font-hand text-4xl text-ink">
+          <h1 className="mt-3 font-hand text-5xl font-bold leading-tight text-ink">
             {note.title}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-soft">

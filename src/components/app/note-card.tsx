@@ -48,7 +48,7 @@ export function NoteCard({ note, className }: { note: Note; className?: string }
         </span>
       </div>
 
-      <h3 className="mt-3 font-display text-lg font-semibold tracking-tight text-ink transition-colors group-hover:text-accent">
+      <h3 className="mt-3 font-hand text-2xl font-bold leading-tight text-ink transition-colors group-hover:text-accent">
         {note.title}
       </h3>
 

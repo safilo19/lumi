@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Nunito, Patrick_Hand } from "next/font/google";
+import { Caveat, Fredoka, Nunito } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import Script from "next/script";
 import { PwaUpdater } from "@/components/app/pwa-updater";
@@ -13,12 +13,12 @@ const fredoka = Fredoka({
   display: "swap",
 });
 
-// Handwriting face for note content (view + export). Legible, upright, prints
-// cleanly. One weight only — handwriting is casual by nature.
-const patrickHand = Patrick_Hand({
-  variable: "--font-patrick-hand",
+// Handwriting face for note content, on screen and in the PDF. A variable
+// weight range keeps headings bold and body legible.
+const caveat = Caveat({
+  variable: "--font-hand-src",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -66,7 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${fredoka.variable} ${nunito.variable} ${patrickHand.variable} ${GeistMono.variable} h-full`}
+      className={`${fredoka.variable} ${nunito.variable} ${caveat.variable} ${GeistMono.variable} h-full`}
     >
       <body className="paper-grain min-h-full flex flex-col">
         <Script
