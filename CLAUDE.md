@@ -120,10 +120,8 @@ A 100%-free web/PWA for CUST University students: record a lecture → transcrib
 
 ## Recent changes
 
-- 2026-10-11 — Exhaustive notes: rewrote `NOTE_SYSTEM_PROMPT` so notes cover EVERY
-  detail (treat them as the student's only study material) — no block cap (30-60+),
-  full paragraphs + every worked example, a visual per structured section, glossary
-  of all terms; raised `MAX_TOKENS` 4096→8192. Live test: a short transcript → 47 blocks.
+- 2026-10-11 — Exhaustive notes: `NOTE_SYSTEM_PROMPT` rewritten to cover EVERY detail
+  (student's only study material; no block cap, 30-60+, a visual per section); `MAX_TOKENS` 4096→8192. Tested: 47 blocks.
 
 - 2026-10-11 — Premium note view, Phases A–C (Editorial luxe + cinematic; all 8
   tools). A: Fraunces serif, editorial CSS (`.note-dropcap`/`.editorial-rule`/
